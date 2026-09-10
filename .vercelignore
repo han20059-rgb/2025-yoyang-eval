@@ -1,0 +1,6 @@
+.next
+.vercel
+node_modules
+pack-deploy.mjs
+deploy-files.json
+deploy-core.json

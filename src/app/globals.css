@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+:root {
+  --paper: #f4f1ea;
+  --ink: #1c1917;
+  --muted: #57534e;
+  --line: #e7e0d4;
+  --card: #fffcf7;
+  --teal: #1f5c57;
+  --teal-soft: #e6f2f0;
+  --amber: #b45309;
+  --highlight: #fde68a;
+}
+
+html,
+body {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+::selection {
+  background: var(--highlight);
+}
+
+.prose-manual {
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.7;
+  font-size: 0.95rem;
+}
+
+mark {
+  background: var(--highlight);
+  color: inherit;
+  padding: 0 0.12em;
+  border-radius: 0.2em;
+}
