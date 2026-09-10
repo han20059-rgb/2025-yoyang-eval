@@ -34,16 +34,6 @@ function Section({
   );
 }
 
-function criteriaList(side: Side) {
-  return side.criteriaItems.filter(
-    (c) =>
-      /다\.|있다|지침|면담|비치|실시/.test(c.text) &&
-      !/충족함|마련한 것으로/.test(c.text) &&
-      !/^\d/.test(c.text.trim()) &&
-      c.text.replace(/\s/g, "").length > 14
-  );
-}
-
 function SidePanel({
   year,
   side,
@@ -59,7 +49,6 @@ function SidePanel({
 }) {
   const { goal, purpose } = extractPurpose(side.intro);
   const scoring = splitScoring(side.criteria);
-  const items = criteriaList(side);
 
   return (
     <div className="min-w-0 space-y-3">
@@ -82,23 +71,6 @@ function SidePanel({
       )}
 
       <Section kicker="무엇을 충족해야 하는가" title="평가기준">
-        {items.length > 0 ? (
-          <ol className="mb-3 space-y-2">
-            {items.slice(0, 14).map((c, idx) => {
-              const added = prevForDiff ? !prevForDiff.replace(/\s/g, "").includes(c.text.replace(/\s/g, "").slice(0, 22)) : false;
-              return (
-                <li
-                  key={idx}
-                  className={`rounded-lg px-3 py-2 text-sm ${added ? "bg-amber-100 ring-1 ring-amber-300" : "bg-stone-50"}`}
-                >
-                  <span className="mr-2 font-semibold text-(--teal)">{c.mark}</span>
-                  {added ? <span className="mr-1 text-[10px] font-semibold text-amber-800">추가</span> : null}
-                  <ManualText text={c.text} query={query} />
-                </li>
-              );
-            })}
-          </ol>
-        ) : null}
         <ManualText text={scoring.body} query={query} prevForDiff={prevForDiff} />
       </Section>
 

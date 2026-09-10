@@ -45,7 +45,7 @@ export function Header() {
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="예: 사회복지사, 욕창, 직원교육"
+            placeholder="지표·직종 검색  예: 사회복지사"
             className="min-w-0 flex-1 rounded-full border border-stone-300 bg-white px-4 py-2 text-sm outline-none ring-(--teal) focus:ring-2"
           />
           <button type="submit" className="rounded-full bg-(--teal) px-4 py-2 text-sm font-medium text-white">
