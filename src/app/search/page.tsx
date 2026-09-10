@@ -1,10 +1,12 @@
 import { Suspense } from "react";
 import { SearchResults } from "@/components/SearchResults";
+import { loadManual } from "@/lib/manual";
 
-export default function SearchPage() {
+export default async function SearchPage() {
+  const data = await loadManual();
   return (
     <Suspense fallback={<p className="text-stone-500">검색 중…</p>}>
-      <SearchResults />
+      <SearchResults indicators={data.indicators} />
     </Suspense>
   );
 }

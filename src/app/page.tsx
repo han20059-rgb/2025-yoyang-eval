@@ -1,10 +1,8 @@
 import Link from "next/link";
-import manual from "@/data/manual.json";
-import type { Manual } from "@/lib/types";
+import { loadManual } from "@/lib/manual";
 
-const data = manual as Manual;
-
-export default function HomePage() {
+export default async function HomePage() {
+  const data = await loadManual();
   const { scoreboard, new2025, removed2021 } = data;
 
   return (

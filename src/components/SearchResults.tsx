@@ -5,16 +5,13 @@ import { useMemo, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { Highlight } from "@/components/Highlight";
 import { searchIndicators } from "@/lib/search";
-import manual from "@/data/manual.json";
-import type { Manual } from "@/lib/types";
+import type { Indicator } from "@/lib/types";
 import { indicatorMeta } from "@/data/indicatorMeta";
 
-const indicators = (manual as Manual).indicators;
-
-export function SearchResults() {
+export function SearchResults({ indicators }: { indicators: Indicator[] }) {
   const params = useSearchParams();
   const q = params.get("q") ?? "";
-  const hits = useMemo(() => searchIndicators(indicators, q), [q]);
+  const hits = useMemo(() => searchIndicators(indicators, q), [indicators, q]);
   const [index, setIndex] = useState(0);
   useEffect(() => {
     setIndex(0);

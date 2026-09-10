@@ -6,11 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ManualText, extractPurpose, splitScoring } from "@/components/Highlight";
 import type { Indicator, Side } from "@/lib/types";
 import { searchIndicators } from "@/lib/search";
-import manual from "@/data/manual.json";
-import type { Manual } from "@/lib/types";
 import { indicatorMeta } from "@/data/indicatorMeta";
-
-const all = (manual as Manual).indicators;
 
 const tabs = [
   { id: "now", label: "이번 평가" },
@@ -132,16 +128,18 @@ function SidePanel({
 function RelatedBlock({
   ids,
   query,
+  catalog,
 }: {
   ids: { id: number; why: string }[];
   query: string;
+  catalog: Indicator[];
 }) {
   const router = useRouter();
   const [goId, setGoId] = useState("");
   const q = query ? `?q=${encodeURIComponent(query)}` : "";
   const named = ids
     .map((r) => {
-      const ind = all.find((i) => i.id === r.id);
+      const ind = catalog.find((i) => i.id === r.id);
       return ind ? { ...r, name: ind.name } : null;
     })
     .filter((x): x is { id: number; why: string; name: string } => Boolean(x));
@@ -205,13 +203,19 @@ function RelatedBlock({
   );
 }
 
-export function IndicatorView({ indicator }: { indicator: Indicator }) {
+export function IndicatorView({
+  indicator,
+  catalog,
+}: {
+  indicator: Indicator;
+  catalog: Indicator[];
+}) {
   const params = useSearchParams();
   const q = params.get("q") ?? "";
   const [tab, setTab] = useState<(typeof tabs)[number]["id"]>("now");
   const meta = indicatorMeta[indicator.id];
 
-  const hits = useMemo(() => (q ? searchIndicators(all, q) : []), [q]);
+  const hits = useMemo(() => (q ? searchIndicators(catalog, q) : []), [q, catalog]);
   const hitIndex = hits.findIndex((h) => h.id === indicator.id);
   const prevHit = hitIndex > 0 ? hits[hitIndex - 1] : null;
   const nextHit = hitIndex >= 0 && hitIndex < hits.length - 1 ? hits[hitIndex + 1] : null;
@@ -281,7 +285,7 @@ export function IndicatorView({ indicator }: { indicator: Indicator }) {
         </section>
       ) : null}
 
-      {meta ? <RelatedBlock ids={meta.related} query={q} /> : null}
+      {meta ? <RelatedBlock ids={meta.related} query={q} catalog={catalog} /> : null}
 
       <div className="flex gap-1 rounded-full bg-stone-200/70 p-1 w-fit">
         {tabs.map((t) => (

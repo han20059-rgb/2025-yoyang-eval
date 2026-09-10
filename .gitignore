@@ -41,5 +41,7 @@ yarn-error.log*
 next-env.d.ts
 
 pack-deploy.mjs
+fix-deploy.mjs
 deploy-files.json
 deploy-core.json
+deploy-small.json

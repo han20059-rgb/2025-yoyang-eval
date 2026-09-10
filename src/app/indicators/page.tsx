@@ -1,10 +1,8 @@
 import Link from "next/link";
-import manual from "@/data/manual.json";
-import type { Manual } from "@/lib/types";
+import { loadManual } from "@/lib/manual";
 
-const data = manual as Manual;
-
-export default function IndicatorsPage() {
+export default async function IndicatorsPage() {
+  const data = await loadManual();
   const areas = [...new Set(data.indicators.map((i) => i.area))];
 
   return (
