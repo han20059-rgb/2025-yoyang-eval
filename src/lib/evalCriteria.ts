@@ -73,6 +73,9 @@ export function parseEvalCriteria(criteria: string): EvalCriterion[] {
     seen.add(mark);
     out.push({ mark, text, methods: extractMethods(chunk) });
   }
+  if (out.length === 0 && body.trim()) {
+    out.push({ mark: "①", text: body, methods: extractMethods(body) });
+  }
   return out;
 }
 
