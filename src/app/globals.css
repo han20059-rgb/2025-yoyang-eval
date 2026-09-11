@@ -35,3 +35,65 @@ mark {
   padding: 0 0.12em;
   border-radius: 0.2em;
 }
+
+@keyframes method-glow {
+  0%,
+  100% {
+    transform: translateY(0);
+    box-shadow: 0 0 0 0 rgb(0 0 0 / 0);
+  }
+  50% {
+    transform: translateY(-1px);
+    box-shadow: 0 0 0 3px rgb(0 0 0 / 0.06);
+  }
+}
+
+.method-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.12rem 0.55rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  animation: method-glow 2.4s ease-in-out infinite;
+}
+
+.method-word {
+  font-weight: 700;
+  padding: 0 0.18em;
+  border-radius: 0.3em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.method-inspect {
+  background: #ccfbf1;
+  color: #0f766e;
+}
+.method-site {
+  background: #d1fae5;
+  color: #047857;
+}
+.method-interview {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+.method-record {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+.method-system {
+  background: #fef3c7;
+  color: #b45309;
+}
+.method-demo {
+  background: #ffe4e6;
+  color: #be123c;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .method-chip {
+    animation: none;
+  }
+}

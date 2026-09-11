@@ -4,6 +4,10 @@ import Link from "next/link";
 import { useMemo, useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ManualText, extractPurpose, splitScoring } from "@/components/Highlight";
+import { CriteriaChecklist } from "@/components/CriteriaChecklist";
+import { MethodChips, MethodText } from "@/components/MethodText";
+import { useProgress } from "@/components/ProgressProvider";
+import { extractMethods } from "@/lib/evalCriteria";
 import type { Indicator, Side } from "@/lib/types";
 import { searchIndicators } from "@/lib/search";
 import { indicatorMeta } from "@/data/indicatorMeta";
@@ -40,19 +44,30 @@ function SidePanel({
   query,
   prevForDiff,
   showDiffLegend,
+  currIndicator,
+  emphasizeMethods,
 }: {
   year: string;
   side: Side;
   query?: string;
   prevForDiff?: string;
   showDiffLegend?: boolean;
+  currIndicator?: Indicator;
+  emphasizeMethods?: boolean;
 }) {
   const { goal, purpose } = extractPurpose(side.intro);
   const scoring = splitScoring(side.criteria);
+  const methodKinds = extractMethods(`${side.criteria}\n${side.method}`);
 
   return (
     <div className="min-w-0 space-y-3">
       <p className="text-xs font-semibold tracking-wide text-stone-500">{year}</p>
+      {emphasizeMethods && methodKinds.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2">
+          <span className="text-[11px] font-semibold text-stone-500">이번 평가 확인 방식</span>
+          <MethodChips methods={methodKinds} pulse />
+        </div>
+      ) : null}
       {showDiffLegend ? (
         <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">
           노란 배경·<b>달라짐</b> 표시는 이전 평가 본문에 없던 내용입니다.
@@ -71,12 +86,22 @@ function SidePanel({
       )}
 
       <Section kicker="무엇을 충족해야 하는가" title="평가기준">
-        <ManualText text={scoring.body} query={query} prevForDiff={prevForDiff} />
+        {emphasizeMethods && currIndicator ? (
+          <CriteriaChecklist indicator={currIndicator} query={query} />
+        ) : emphasizeMethods ? (
+          <MethodText text={scoring.body} query={query} emphasize />
+        ) : (
+          <ManualText text={scoring.body} query={query} prevForDiff={prevForDiff} />
+        )}
       </Section>
 
       {scoring.scoring ? (
         <Section kicker="몇 점을 주는가" title="채점기준">
-          <ManualText text={scoring.scoring} query={query} prevForDiff={prevForDiff} />
+          {emphasizeMethods ? (
+            <MethodText text={scoring.scoring} query={query} emphasize />
+          ) : (
+            <ManualText text={scoring.scoring} query={query} prevForDiff={prevForDiff} />
+          )}
         </Section>
       ) : null}
 
@@ -85,7 +110,11 @@ function SidePanel({
       </Section>
 
       <Section kicker="어떻게 확인하는가" title="확인방법">
-        <ManualText text={side.method} query={query} prevForDiff={prevForDiff} />
+        {emphasizeMethods ? (
+          <MethodText text={side.method} query={query} emphasize />
+        ) : (
+          <ManualText text={side.method} query={query} prevForDiff={prevForDiff} />
+        )}
       </Section>
 
       {side.law?.trim() ? (
@@ -186,6 +215,8 @@ export function IndicatorView({
   const q = params.get("q") ?? "";
   const [tab, setTab] = useState<(typeof tabs)[number]["id"]>("now");
   const meta = indicatorMeta[indicator.id];
+  const { statsFor, viewRole } = useProgress();
+  const prep = statsFor(indicator, viewRole);
 
   const hits = useMemo(() => (q ? searchIndicators(catalog, q) : []), [q, catalog]);
   const hitIndex = hits.findIndex((h) => h.id === indicator.id);
@@ -235,6 +266,15 @@ export function IndicatorView({
             <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">신설</span>
           ) : null}
           <span className="rounded-full bg-(--teal-soft) px-2 py-0.5 text-xs text-(--teal)">{indicator.score}점</span>
+          {prep.total > 0 ? (
+            <span
+              className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                prep.complete ? "bg-teal-100 text-teal-800" : "bg-amber-100 text-amber-900"
+              }`}
+            >
+              {prep.complete ? "준비 완료" : `기준 ${prep.done}/${prep.total} · 미완료 ${prep.left}`}
+            </span>
+          ) : null}
         </div>
         {indicator.prevIndicators.length > 0 ? (
           <p className="mt-2 text-sm text-stone-600">
@@ -295,7 +335,9 @@ export function IndicatorView({
       ) : null}
 
       <div className={tab === "both" ? "grid gap-4 lg:grid-cols-2" : undefined}>
-        {tab === "now" && <SidePanel year="2025년 이번 평가" side={indicator.curr} query={q} />}
+        {tab === "now" && (
+          <SidePanel year="2025년 이번 평가" side={indicator.curr} query={q} currIndicator={indicator} emphasizeMethods />
+        )}
         {tab === "prev" && <SidePanel year="2021년 이전 평가" side={indicator.prev} query={q} />}
         {tab === "both" && (
           <>
@@ -309,6 +351,8 @@ export function IndicatorView({
                 query={q}
                 prevForDiff={indicator.prev.text}
                 showDiffLegend
+                currIndicator={indicator}
+                emphasizeMethods
               />
             </div>
           </>

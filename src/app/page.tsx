@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { DutyBoard } from "@/components/DutyBoard";
+import { ProgressBoard } from "@/components/ProgressBoard";
 import { loadManual } from "@/lib/manual";
 
 export default async function HomePage() {
@@ -27,7 +28,9 @@ export default async function HomePage() {
         </dl>
       </section>
 
-      <DutyBoard />
+      <ProgressBoard indicators={data.indicators} />
+
+      <DutyBoard indicators={data.indicators} />
 
       <section className="space-y-3">
         <h3 className="text-lg font-semibold">달라진 점만</h3>
