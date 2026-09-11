@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { ProgressCounts } from "@/components/ProgressBoard";
 import { useProgress } from "@/components/ProgressProvider";
 import { duties, periods, roles, type PeriodId } from "@/data/duties";
 import type { Indicator } from "@/lib/types";
@@ -108,13 +109,7 @@ export function DutyBoard({ indicators }: { indicators: Indicator[] }) {
                     <h4 className="font-semibold text-stone-900">{d.title}</h4>
                     <div className="flex items-center gap-1.5">
                       {s && s.total > 0 ? (
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-                            s.complete ? "bg-teal-100 text-teal-800" : "bg-amber-100 text-amber-900"
-                          }`}
-                        >
-                          {s.complete ? "완료" : `미완료 ${s.left}`}
-                        </span>
+                        <ProgressCounts done={s.done} left={s.left} complete={s.complete} />
                       ) : null}
                       <Link
                         href={`/indicators/${d.indicator}`}

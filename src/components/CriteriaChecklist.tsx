@@ -1,6 +1,7 @@
 "use client";
 
 import { MethodChips, MethodText } from "@/components/MethodText";
+import { ProgressCounts } from "@/components/ProgressBoard";
 import { useProgress } from "@/components/ProgressProvider";
 import { roles } from "@/data/duties";
 import { parseEvalCriteria, roleShort, rolesForIndicator } from "@/lib/evalCriteria";
@@ -72,18 +73,7 @@ export function CriteriaChecklist({
     <div className="space-y-3">
       <div className="rounded-xl bg-stone-50 px-3 py-2">
         <div className="flex flex-wrap items-end justify-between gap-2">
-          <p className="text-sm font-semibold text-stone-800">
-            {stat.complete ? (
-              <span className="text-teal-700">기준 {stat.total}개 모두 완료</span>
-            ) : (
-              <>
-                <span className="text-(--teal)">
-                  {stat.done}/{stat.total} 완료
-                </span>
-                <span className="ml-2 text-amber-800">미완료 {stat.left}개</span>
-              </>
-            )}
-          </p>
+          <ProgressCounts done={stat.done} left={stat.left} complete={stat.complete} />
           {mine && viewRole !== "all" ? (
             <p className="text-xs text-stone-600">
               {roles.find((r) => r.id === viewRole)?.label}:{" "}
@@ -112,11 +102,12 @@ export function CriteriaChecklist({
               </div>
               <p className="text-xs font-semibold">
                 {row?.complete ? (
-                  <span className="text-teal-700">완료</span>
+                  <span className="text-teal-700">완료 {row.done}</span>
                 ) : (
-                  <span className="text-amber-800">
-                    {row?.done}/{row?.total} · 미완료 {row?.leftRoles.length}개 부서
-                  </span>
+                  <>
+                    <span className="text-teal-700">완료 {row?.done}</span>
+                    <span className="ml-1.5 text-amber-800">미완료 {row?.leftRoles.length}</span>
+                  </>
                 )}
               </p>
             </div>

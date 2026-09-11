@@ -117,9 +117,12 @@ export function ProgressBoard({ indicators }: { indicators: Indicator[] }) {
               <p className="text-[11px] opacity-80">{d.done}/{d.total}</p>
               <p className="font-semibold leading-tight">{d.role.label.replace("·", " ")}</p>
               {d.left ? (
-                <p className={`text-xs ${active ? "text-amber-100" : "text-amber-800"}`}>미완료 {d.left}</p>
+                <p className={`text-xs ${active ? "text-white/90" : ""}`}>
+                  <span className={active ? "text-white" : "text-teal-700"}>완료 {d.done}</span>
+                  <span className={`ml-1.5 ${active ? "text-amber-100" : "text-amber-800"}`}>미완료 {d.left}</span>
+                </p>
               ) : (
-                <p className={`text-xs ${active ? "text-white/80" : "text-teal-700"}`}>완료</p>
+                <p className={`text-xs ${active ? "text-white/80" : "text-teal-700"}`}>완료 {d.done}</p>
               )}
             </button>
           );
@@ -139,8 +142,15 @@ export function ProgressBoard({ indicators }: { indicators: Indicator[] }) {
               <span className="min-w-0 flex-1">
                 <span className="flex items-center justify-between gap-2">
                   <span className="truncate text-sm">{i.name}</span>
-                  <span className={`shrink-0 text-xs font-semibold ${s.complete ? "text-teal-700" : "text-amber-800"}`}>
-                    {s.complete ? "완료" : `${s.done}/{s.total}`}
+                  <span className={`shrink-0 text-xs font-semibold ${s.complete ? "text-teal-700" : ""}`}>
+                    {s.complete ? (
+                      <span className="text-teal-700">완료 {s.done}</span>
+                    ) : (
+                      <>
+                        <span className="text-teal-700">완료 {s.done}</span>
+                        <span className="ml-1.5 text-amber-800">미완료 {s.left}</span>
+                      </>
+                    )}
                   </span>
                 </span>
                 <span className="mt-1 block h-1.5 overflow-hidden rounded-full bg-stone-200">
@@ -158,17 +168,31 @@ export function ProgressBoard({ indicators }: { indicators: Indicator[] }) {
   );
 }
 
+export function ProgressCounts({
+  done,
+  left,
+  complete,
+}: {
+  done: number;
+  left: number;
+  complete: boolean;
+}) {
+  if (complete) {
+    return (
+      <span className="rounded-full bg-teal-100 px-2 py-0.5 text-[11px] font-semibold text-teal-800">완료 {done}</span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1">
+      <span className="rounded-full bg-teal-100 px-2 py-0.5 text-[11px] font-semibold text-teal-800">완료 {done}</span>
+      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-900">미완료 {left}</span>
+    </span>
+  );
+}
+
 export function IndicatorProgressBadge({ indicator }: { indicator: Indicator }) {
   const { statsFor, viewRole } = useProgress();
   const s = statsFor(indicator, viewRole);
   if (!s.total) return null;
-  return (
-    <span
-      className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-        s.complete ? "bg-teal-100 text-teal-800" : "bg-amber-100 text-amber-900"
-      }`}
-    >
-      {s.complete ? "완료" : `미완료 ${s.left}`}
-    </span>
-  );
+  return <ProgressCounts done={s.done} left={s.left} complete={s.complete} />;
 }

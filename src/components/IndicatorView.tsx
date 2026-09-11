@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ManualText, extractPurpose, splitScoring } from "@/components/Highlight";
 import { CriteriaChecklist } from "@/components/CriteriaChecklist";
 import { MethodChips, MethodText } from "@/components/MethodText";
+import { ProgressCounts } from "@/components/ProgressBoard";
 import { useProgress } from "@/components/ProgressProvider";
 import { extractMethods } from "@/lib/evalCriteria";
 import type { Indicator, Side } from "@/lib/types";
@@ -267,13 +268,7 @@ export function IndicatorView({
           ) : null}
           <span className="rounded-full bg-(--teal-soft) px-2 py-0.5 text-xs text-(--teal)">{indicator.score}점</span>
           {prep.total > 0 ? (
-            <span
-              className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                prep.complete ? "bg-teal-100 text-teal-800" : "bg-amber-100 text-amber-900"
-              }`}
-            >
-              {prep.complete ? "준비 완료" : `기준 ${prep.done}/${prep.total} · 미완료 ${prep.left}`}
-            </span>
+            <ProgressCounts done={prep.done} left={prep.left} complete={prep.complete} />
           ) : null}
         </div>
         {indicator.prevIndicators.length > 0 ? (
