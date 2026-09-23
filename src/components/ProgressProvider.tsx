@@ -1,15 +1,15 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useSyncExternalStore, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useSyncExternalStore, type ReactNode } from "react";
 import { roles, type RoleId } from "@/data/duties";
+import { mergeChecks, checksEqual, type Checks } from "@/lib/checks";
 import { checkKey, parseEvalCriteria, rolesForIndicator, type EvalCriterion } from "@/lib/evalCriteria";
+import { getSupabase } from "@/lib/supabase";
 import type { Indicator } from "@/lib/types";
 
 const STORAGE = "yoyang-eval-checks-v1";
 const ROLE_STORAGE = "yoyang-eval-view-role-v1";
 const EVENT = "yoyang-progress";
-
-type Checks = Record<string, boolean>;
 
 function readChecks(): Checks {
   try {
@@ -78,6 +78,43 @@ type Ctx = {
 
 const ProgressContext = createContext<Ctx | null>(null);
 
+async function pullAndMerge(userId: string) {
+  const supabase = getSupabase();
+  if (!supabase) return;
+  const { data } = await supabase.from("eval_progress").select("checks, view_role").eq("user_id", userId).maybeSingle();
+  const local = readChecks();
+  const remote = (data?.checks as Checks | undefined) || {};
+  const merged = mergeChecks(local, remote);
+  if (!checksEqual(merged, local)) writeChecks(merged);
+  if (data?.view_role && !localStorage.getItem(ROLE_STORAGE)) {
+    localStorage.setItem(ROLE_STORAGE, data.view_role);
+    window.dispatchEvent(new Event(EVENT));
+  }
+  if (!data || !checksEqual(merged, remote)) {
+    await supabase.from("eval_progress").upsert({
+      user_id: userId,
+      checks: merged,
+      view_role: localStorage.getItem(ROLE_STORAGE) || data?.view_role || "all",
+      updated_at: new Date().toISOString(),
+    });
+  }
+}
+
+let saveTimer: number | undefined;
+function saveRemote(userId: string) {
+  window.clearTimeout(saveTimer);
+  saveTimer = window.setTimeout(() => {
+    const supabase = getSupabase();
+    if (!supabase) return;
+    void supabase.from("eval_progress").upsert({
+      user_id: userId,
+      checks: readChecks(),
+      view_role: localStorage.getItem(ROLE_STORAGE) || "all",
+      updated_at: new Date().toISOString(),
+    });
+  }, 300);
+}
+
 export function ProgressProvider({ children }: { children: ReactNode }) {
   const checksRaw = useSyncExternalStore(subscribe, snapshot, () => "{}");
   const roleRaw = useSyncExternalStore(subscribe, roleSnapshot, () => "all");
@@ -90,9 +127,44 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
   }, [checksRaw]);
   const viewRole = (roles.some((r) => r.id === roleRaw) ? roleRaw : "all") as RoleId | "all";
 
+  useEffect(() => {
+    const supabase = getSupabase();
+    if (!supabase) return;
+    let userId: string | null = null;
+    supabase.auth.getSession().then(({ data }) => {
+      userId = data.session?.user.id ?? null;
+      if (userId) void pullAndMerge(userId);
+    });
+    const { data } = supabase.auth.onAuthStateChange((_e, session) => {
+      userId = session?.user.id ?? null;
+      if (userId) void pullAndMerge(userId);
+    });
+    const channel = supabase
+      .channel("eval_progress_row")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "eval_progress" },
+        (payload) => {
+          const row = payload.new as { user_id?: string; checks?: Checks } | undefined;
+          if (!row?.user_id || row.user_id !== userId) return;
+          const incoming = row.checks || {};
+          if (!checksEqual(incoming, readChecks())) writeChecks(incoming);
+        }
+      )
+      .subscribe();
+    return () => {
+      data.subscription.unsubscribe();
+      void supabase.removeChannel(channel);
+    };
+  }, []);
+
   const setViewRole = useCallback((r: RoleId | "all") => {
     localStorage.setItem(ROLE_STORAGE, r);
     window.dispatchEvent(new Event(EVENT));
+    const supabase = getSupabase();
+    void supabase?.auth.getSession().then(({ data }) => {
+      if (data.session?.user.id) saveRemote(data.session.user.id);
+    });
   }, []);
 
   const isChecked = useCallback(
@@ -106,6 +178,10 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     if (next[k]) delete next[k];
     else next[k] = true;
     writeChecks(next);
+    const supabase = getSupabase();
+    void supabase?.auth.getSession().then(({ data }) => {
+      if (data.session?.user.id) saveRemote(data.session.user.id);
+    });
   }, []);
 
   const statsFor = useCallback(

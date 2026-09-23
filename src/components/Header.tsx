@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { FormEvent, useState } from "react";
+import { AuthBar } from "@/components/AuthBar";
 
 const nav = [
   { href: "/", label: "요약" },
@@ -63,6 +64,9 @@ export function Header() {
             </Link>
           ))}
         </nav>
+      </div>
+      <div className="mx-auto flex max-w-6xl justify-end px-4 pb-3">
+        <AuthBar />
       </div>
     </header>
   );
