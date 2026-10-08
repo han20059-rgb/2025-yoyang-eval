@@ -18,7 +18,12 @@ export function Header() {
   const [q, setQ] = useState("");
   const nav =
     mode !== "demo" && identity?.isAdmin
-      ? [...baseNav, { href: "/admin/manuals", label: "매뉴얼등록" }, { href: "/admin/assignments", label: "담당배정" }]
+      ? [
+          ...baseNav,
+          { href: "/admin/manuals", label: "매뉴얼등록" },
+          { href: "/admin/assignments", label: "담당배정" },
+          { href: "/admin/admins", label: "관리자관리" },
+        ]
       : baseNav;
 
   function onSubmit(e: FormEvent) {

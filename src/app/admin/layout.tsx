@@ -61,7 +61,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <nav className="flex flex-col gap-1.5">
         <a href="/admin/manuals" className="inline-flex min-h-11 items-center rounded-xl border bg-white px-3">매뉴얼 등록</a>
         <a href="/admin/assignments" className="inline-flex min-h-11 items-center rounded-xl border bg-white px-3">담당 배정 관리</a>
-        <a href="/admin/admins" className="inline-flex min-h-11 items-center rounded-xl border bg-white px-3">관리자 권한</a>
+        <a href="/admin/admins" className="inline-flex min-h-11 items-center rounded-xl border bg-white px-3">관리자 관리</a>
         <button type="button" className="min-h-11 rounded-xl border px-3 text-left" onClick={() => void onLogout()}>
           로그아웃
         </button>

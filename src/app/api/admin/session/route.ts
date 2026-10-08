@@ -5,6 +5,9 @@ import { clearStaffCookie } from "@/lib/staffSession";
 export const runtime = "nodejs";
 
 export async function GET(req: Request) {
+  if (req.headers.get("x-eval-demo") === "1") {
+    return NextResponse.json({ admin: false, error: "시연 모드에서는 관리 기능을 쓰지 않습니다." });
+  }
   const gate = await requireAdmin(req);
   if (!gate.ok) {
     const status = gate.res.status;
