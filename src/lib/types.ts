@@ -12,6 +12,8 @@ export type Side = {
 
 export type PrevRef = { id: number; name: string; score: number };
 
+export type IndicatorFullSource = import("@/lib/extract/parseIndicators").IndicatorFull;
+
 export type Indicator = {
   id: number;
   name: string;
@@ -20,10 +22,13 @@ export type Indicator = {
   score: number;
   isNew: boolean;
   pages: number[];
+  printedPages?: number[];
   prevIndicators: PrevRef[];
   changeNote: string;
   curr: Side;
   prev: Side;
+  fullSource?: IndicatorFullSource | null;
+  localPreview?: boolean;
 };
 
 export type Manual = {

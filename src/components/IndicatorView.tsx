@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEvalSession } from "@/components/EvalSession";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ManualText, extractPurpose, splitScoring } from "@/components/Highlight";
 import { CriteriaChecklist } from "@/components/CriteriaChecklist";
@@ -12,6 +13,7 @@ import { extractMethods } from "@/lib/evalCriteria";
 import type { Indicator, Side } from "@/lib/types";
 import { searchIndicators } from "@/lib/search";
 import { indicatorMeta } from "@/data/indicatorMeta";
+import { IndicatorSourcePanel } from "@/components/IndicatorSourcePanel";
 
 const tabs = [
   { id: "now", label: "이번 평가" },
@@ -215,6 +217,8 @@ export function IndicatorView({
   const params = useSearchParams();
   const q = params.get("q") ?? "";
   const [tab, setTab] = useState<(typeof tabs)[number]["id"]>("now");
+  const [mineOnly, setMineOnly] = useState(false);
+  const { identity } = useEvalSession();
   const meta = indicatorMeta[indicator.id];
   const { statsFor, viewRole } = useProgress();
   const prep = statsFor(indicator, viewRole);
@@ -229,8 +233,26 @@ export function IndicatorView({
   const nextId = indicator.id < 45 ? indicator.id + 1 : null;
   const qs = q ? `?q=${encodeURIComponent(q)}` : "";
 
+  useEffect(() => {
+    const hash = decodeURIComponent(window.location.hash.replace(/^#/, ""));
+    if (!hash) return;
+    const go = () => {
+      const el = document.getElementById(hash);
+      if (!el) return false;
+      el.scrollIntoView({ block: "start" });
+      el.classList.add("ring-2", "ring-teal-600");
+      return true;
+    };
+    if (go()) return;
+    const t = window.setTimeout(go, 250);
+    return () => window.clearTimeout(t);
+  }, [indicator.id]);
+
   return (
     <article className="space-y-4">
+      <button type="button" className="min-h-11 rounded-xl border bg-white px-3 text-[16px]" onClick={() => window.history.back()}>
+        뒤로
+      </button>
       {q && thisHit ? (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-amber-50 px-4 py-3 text-sm">
           <p>
@@ -258,11 +280,15 @@ export function IndicatorView({
       <header className="rounded-2xl border border-(--line) bg-(--card) p-5">
         <p className="text-xs text-stone-500">
           {indicator.area} · {indicator.sub}
-          {indicator.pages[0] ? ` · 매뉴얼 ${indicator.pages[0]}쪽` : ""}
+          {indicator.fullSource?.filePages?.length
+            ? ` · 파일 순서 ${indicator.fullSource.filePages[0]}쪽 / 인쇄 ${indicator.fullSource.printedPages[0] ?? "미확인"}쪽`
+            : indicator.pages[0]
+              ? ` · 매뉴얼 ${indicator.pages[0]}쪽(번들)`
+              : ""}
         </p>
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <span className="rounded-lg bg-(--teal) px-2.5 py-1 text-sm font-bold text-white">지표 {indicator.id}</span>
-          <h2 className="text-2xl font-bold">{indicator.name}</h2>
+          <h2 className="text-2xl font-bold">지표 {indicator.id} · {indicator.name}</h2>
           {indicator.isNew ? (
             <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">신설</span>
           ) : null}
@@ -270,6 +296,13 @@ export function IndicatorView({
           {prep.total > 0 ? (
             <ProgressCounts done={prep.done} left={prep.left} complete={prep.complete} />
           ) : null}
+          <span className="rounded-full bg-stone-100 px-2 py-1 text-xs">
+            추출 {indicator.fullSource?.needsReview ? "검토 필요" : indicator.fullSource ? "추출됨" : "번들"}
+          </span>
+          <span className="rounded-full bg-stone-100 px-2 py-1 text-xs">
+            원문 대조 {indicator.fullSource?.compareStatus === "tool-compared" ? "도구 대조" : "미완료"}
+          </span>
+          <span className="rounded-full bg-stone-100 px-2 py-1 text-xs">승인 전</span>
         </div>
         {indicator.prevIndicators.length > 0 ? (
           <p className="mt-2 text-sm text-stone-600">
@@ -329,9 +362,31 @@ export function IndicatorView({
         </div>
       ) : null}
 
+      {tab === "now" && indicator.fullSource ? (
+        <div className="space-y-2">
+          <div className="flex flex-col gap-1.5">
+            <button type="button" className={`min-h-11 rounded-xl border px-3 text-left ${mineOnly ? "bg-(--teal) text-white" : "bg-white"}`} onClick={() => setMineOnly(true)}>
+              내 담당만
+            </button>
+            <button type="button" className={`min-h-11 rounded-xl border px-3 text-left ${!mineOnly ? "bg-(--teal) text-white" : "bg-white"}`} onClick={() => setMineOnly(false)}>
+              전체 내용
+            </button>
+          </div>
+          {identity?.evalRole ? (
+            <p className="rounded-lg bg-teal-50 px-3 py-2 text-[15px] leading-7 text-teal-900">
+              내 담당 문단만 한 가지 색으로 표시합니다. 공동 담당 이름은 펼쳐 확인하세요.
+            </p>
+          ) : null}
+          <IndicatorSourcePanel full={indicator.fullSource} mineOnly={mineOnly} myRole={identity?.evalRole || null} />
+        </div>
+      ) : null}
+
       <div className={tab === "both" ? "grid gap-4 lg:grid-cols-2" : undefined}>
         {tab === "now" && (
-          <SidePanel year="2025년 이번 평가" side={indicator.curr} query={q} currIndicator={indicator} emphasizeMethods />
+          <div className="space-y-3">
+            <p className="text-[13px] text-stone-500">아래는 준비 체크용입니다. 위 원문을 대신하지 않습니다.</p>
+            <SidePanel year="2025년 이번 평가" side={indicator.curr} query={q} currIndicator={indicator} emphasizeMethods />
+          </div>
         )}
         {tab === "prev" && <SidePanel year="2021년 이전 평가" side={indicator.prev} query={q} />}
         {tab === "both" && (

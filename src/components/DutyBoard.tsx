@@ -1,139 +1,153 @@
 "use client";
 
-import Link from "next/link";
-import { useMemo, useState } from "react";
-import { ProgressCounts } from "@/components/ProgressBoard";
+import { useEffect, useMemo, useState } from "react";
+import { useEvalSession } from "@/components/EvalSession";
 import { useProgress } from "@/components/ProgressProvider";
+import { useAssignments } from "@/components/AssignmentProvider";
 import { duties, periods, roles, type PeriodId } from "@/data/duties";
+import { parseEvalCriteria, criterionEvidence, rolePreparesDuty } from "@/lib/evalCriteria";
 import type { Indicator } from "@/lib/types";
 
-function Chip({
-  active,
-  children,
-  onClick,
-}: {
-  active: boolean;
-  children: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-full px-3 py-1.5 text-sm ${
-        active ? "bg-(--teal) text-white" : "border border-stone-200 bg-white text-stone-600 hover:border-(--teal)"
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
-
 export function DutyBoard({ indicators }: { indicators: Indicator[] }) {
-  const { viewRole, setViewRole, statsFor } = useProgress();
-  const [period, setPeriod] = useState<PeriodId | "all">("all");
-  const role = viewRole;
-  const byId = useMemo(() => new Map(indicators.map((i) => [i.id, i])), [indicators]);
+  const { mode, identity } = useEvalSession();
+  const { viewRole, setViewRole } = useProgress();
+  const { adminRoles } = useAssignments();
+  const [period, setPeriod] = useState<PeriodId | "all">("daily");
+  const [open, setOpen] = useState<string | null>(null);
 
+  useEffect(() => {
+    const raw = sessionStorage.getItem("eval-duty-ui");
+    if (!raw) return;
+    try {
+      const s = JSON.parse(raw) as { period?: PeriodId; open?: string; scroll?: number; viewRole?: string };
+      if (s.period) setPeriod(s.period);
+      if (s.open) setOpen(s.open);
+      if (s.viewRole) setViewRole(s.viewRole as typeof viewRole);
+      if (s.scroll) window.scrollTo(0, s.scroll);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  useEffect(() => {
+    sessionStorage.setItem("eval-duty-ui", JSON.stringify({ period, open, scroll: window.scrollY, viewRole }));
+  }, [period, open, viewRole]);
+
+  useEffect(() => {
+    if (identity?.evalRole && viewRole === "all" && mode !== "anon") setViewRole(identity.evalRole);
+  }, [identity, mode, setViewRole, viewRole]);
+
+  const role = viewRole;
   const filtered = useMemo(() => {
     return duties.filter((d) => {
       if (period !== "all" && d.period !== period) return false;
-      if (role !== "all" && !d.roles.includes(role) && !d.roles.includes("all")) return false;
-      return true;
+      const ind = indicators.find((i) => i.id === d.indicator);
+      if (rolePreparesDuty(d, role, ind?.curr.criteria, ind?.curr.method)) return true;
+      const items = parseEvalCriteria(ind?.curr.criteria || "");
+      return items.some((it) => adminRoles(d.indicator, it.mark).includes(role));
     });
-  }, [period, role]);
-
-  const groups = useMemo(() => {
-    return periods
-      .filter((p) => period === "all" || p.id === period)
-      .map((p) => ({
-        key: p.id,
-        title: `${p.label} · ${p.hint}`,
-        items: filtered.filter((d) => d.period === p.id),
-      }))
-      .filter((g) => g.items.length > 0);
-  }, [filtered, period]);
+  }, [period, role, indicators, adminRoles]);
 
   return (
     <section className="space-y-4">
       <div>
         <p className="text-xs font-medium tracking-wide text-(--teal)">현장에서 바로 쓰는 일정</p>
         <h2 className="text-xl font-bold">해야 할 일</h2>
-        <p className="mt-1 max-w-2xl text-sm text-stone-600">
-          매뉴얼에 주기가 적힌 일만 모았습니다. 직종을 고르면 위 준비 현황과 같이 움직입니다.
-        </p>
+        <p className="mt-1 text-sm text-stone-600">내 직종을 고른 뒤 주기를 고르세요. 지표 준비 완료와 이 목록의 수행은 다릅니다.</p>
       </div>
-
-      <div className="space-y-2">
-        <p className="text-xs text-stone-500">주기</p>
-        <div className="flex flex-wrap gap-1.5">
-          <Chip active={period === "all"} onClick={() => setPeriod("all")}>
-            전체
-          </Chip>
-          {periods.map((p) => (
-            <Chip key={p.id} active={period === p.id} onClick={() => setPeriod(p.id)}>
-              {p.label}
-            </Chip>
-          ))}
-        </div>
-      </div>
-
       <div className="space-y-2">
         <p className="text-xs text-stone-500">직종</p>
-        <div className="flex flex-wrap gap-1.5">
-          <Chip active={role === "all"} onClick={() => setViewRole("all")}>
-            모든 직종
-          </Chip>
+        <div className="flex flex-col gap-1.5">
           {roles
             .filter((r) => r.id !== "all")
             .map((r) => (
-              <Chip key={r.id} active={role === r.id} onClick={() => setViewRole(r.id)}>
+              <button
+                key={r.id}
+                type="button"
+                onClick={() => setViewRole(r.id)}
+                className={`min-h-11 w-full rounded-xl border px-3 text-left text-[16px] ${
+                  role === r.id ? "border-(--teal) bg-(--teal) text-white" : "border-stone-200 bg-white"
+                }`}
+              >
                 {r.label}
-              </Chip>
+              </button>
             ))}
         </div>
       </div>
-
-      <p className="text-xs text-stone-500">{filtered.length}건 · 카드의 지표 번호를 누르면 원문을 봅니다.</p>
-
-      {groups.map((g) => (
-        <div key={g.key} className="space-y-2">
-          <h3 className="text-sm font-semibold text-(--teal)">{g.title}</h3>
-          <div className="grid gap-2 md:grid-cols-2">
-            {g.items.map((d) => {
-              const ind = byId.get(d.indicator);
-              const s = ind ? statsFor(ind, role) : null;
-              return (
-                <article key={`${g.key}-${d.indicator}-${d.title}`} className="rounded-xl border border-(--line) bg-(--card) p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-2">
-                    <h4 className="font-semibold text-stone-900">{d.title}</h4>
-                    <div className="flex items-center gap-1.5">
-                      {s && s.total > 0 ? (
-                        <ProgressCounts done={s.done} left={s.left} complete={s.complete} />
-                      ) : null}
-                      <Link
-                        href={`/indicators/${d.indicator}`}
-                        className="shrink-0 rounded-full bg-(--teal-soft) px-2.5 py-0.5 text-xs font-medium text-(--teal)"
-                      >
-                        지표 {d.indicator}
-                      </Link>
-                    </div>
-                  </div>
-                  <p className="mt-1 text-xs text-stone-500">
-                    {roles
-                      .filter((r) => d.roles.includes(r.id))
-                      .map((r) => r.label)
-                      .join(" · ")}
-                  </p>
-                  <p className="mt-2 text-sm leading-relaxed text-stone-700">{d.how}</p>
-                </article>
-              );
-            })}
-          </div>
+      <div className="space-y-2">
+        <p className="text-xs text-stone-500">주기</p>
+        <div className="flex flex-col gap-1.5">
+          {periods.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => setPeriod(p.id)}
+              className={`min-h-11 w-full rounded-xl border px-3 text-left text-[16px] ${
+                period === p.id ? "border-(--teal) bg-(--teal) text-white" : "border-stone-200 bg-white"
+              }`}
+            >
+              {p.label} · {p.hint}
+            </button>
+          ))}
         </div>
-      ))}
-
-      {groups.length === 0 ? <p className="text-sm text-stone-500">선택한 조건에 해당하는 일이 없습니다.</p> : null}
+      </div>
+      <ul className="space-y-2">
+        {filtered.map((d) => {
+          const key = `${d.period}-${d.indicator}-${d.title}`;
+          const opened = open === key;
+          const freq = periods.find((p) => p.id === d.period)?.hint || "";
+          return (
+            <li key={key} className="rounded-xl border border-(--line) bg-(--card)">
+              <button
+                type="button"
+                className="flex min-h-11 w-full items-center justify-between gap-2 px-3 py-3 text-left"
+                onClick={() => setOpen(opened ? null : key)}
+              >
+                <span className="text-[16px] font-semibold leading-6">{d.title}</span>
+                <span className="shrink-0 text-sm text-stone-500">{freq} · {opened ? "접기" : "펼치기"}</span>
+              </button>
+              {opened ? (
+                <div className="space-y-2 border-t border-stone-100 px-3 py-3 text-[16px] leading-7">
+                  <p>{d.how}</p>
+                  <p className="text-sm text-stone-500">해야 할 내용·남길 기록·주의는 원문을 따릅니다. 업무 수행 완료와 평가 준비 완료는 다릅니다.</p>
+                  {(() => {
+                    const ind = indicators.find((i) => i.id === d.indicator);
+                    const loc = `지표 ${d.indicator} · ${ind?.name || d.title}${d.mark ? ` 기준 ${d.mark}` : ""} · 파일 ${ind?.fullSource?.filePages?.[0] ?? ind?.pages?.[0] ?? "?"}쪽`;
+                    const ev = criterionEvidence(d.indicator, d.mark || "①", `${d.title}. ${d.how}\n${ind?.curr.criteria || ""}`, loc).filter((e) => e.role === role);
+                    return ev.length ? (
+                      <div className="rounded-lg bg-teal-50 px-2 py-2 text-[15px] leading-7">
+                        <p className="text-[13px] font-semibold text-teal-800">담당 근거</p>
+                        <p>{ev[0].quote}</p>
+                        <p className="text-sm text-stone-600">{ev[0].loc}</p>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-amber-800">이 업무는 원문에 수행 주체가 없어 내 직종 담당으로 확정하지 않습니다.</p>
+                    );
+                  })()}
+                  <a
+                    className="inline-flex min-h-11 items-center text-(--teal) underline"
+                    href={`/indicators/${d.indicator}${d.mark ? `#crit-${d.indicator}-${d.mark}` : "#checklist"}`}
+                    onClick={(e) => {
+                      sessionStorage.setItem(
+                        "eval-duty-ui",
+                        JSON.stringify({ period, open: key, scroll: window.scrollY, viewRole: role })
+                      );
+                      e.preventDefault();
+                      const hash = d.mark ? `crit-${d.indicator}-${d.mark}` : "checklist";
+                      window.location.assign(`/indicators/${d.indicator}#${hash}`);
+                    }}
+                  >
+                    관련 평가기준 보기 (지표 {d.indicator}
+                    {d.mark ? ` 기준 ${d.mark}` : ""})
+                  </a>
+                </div>
+              ) : null}
+            </li>
+          );
+        })}
+      </ul>
+      {filtered.length === 0 ? <p className="text-sm text-stone-500">선택한 직종·주기에 해당하는 일이 없습니다.</p> : null}
+      <p className="hidden">{indicators.length}</p>
     </section>
   );
 }

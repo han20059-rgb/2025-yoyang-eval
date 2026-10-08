@@ -29,6 +29,7 @@ export type Duty = {
   title: string;
   how: string;
   indicator: number;
+  mark?: string;
 };
 
 export const duties: Duty[] = [
@@ -38,6 +39,7 @@ export const duties: Duty[] = [
     title: "실내 환기 하루 3회 이상",
     how: "회당 10분 이상. 환기수칙을 두고 층마다 일일 점검표에 시작 시간을 적는다. 공기청정기만으로는 인정되지 않는다.",
     indicator: 9,
+    mark: "②",
   },
   {
     period: "daily",
