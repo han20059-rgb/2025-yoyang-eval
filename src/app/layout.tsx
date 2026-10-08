@@ -1,6 +1,8 @@
 import { Noto_Sans_KR } from "next/font/google";
 import type { Metadata } from "next";
 import { Header } from "@/components/Header";
+import { EvalSessionProvider } from "@/components/EvalSession";
+import { AssignmentProvider } from "@/components/AssignmentProvider";
 import { ProgressProvider } from "@/components/ProgressProvider";
 import "./globals.css";
 
@@ -18,10 +20,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="ko" className={`${noto.className} h-full`}>
       <body className="min-h-full">
-        <ProgressProvider>
-          <Header />
-          <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
-        </ProgressProvider>
+        <EvalSessionProvider>
+          <AssignmentProvider>
+            <ProgressProvider>
+              <Header />
+              <main className="mx-auto max-w-6xl px-3 pb-24 pt-4 sm:px-4 sm:py-6">{children}</main>
+            </ProgressProvider>
+          </AssignmentProvider>
+        </EvalSessionProvider>
       </body>
     </html>
   );

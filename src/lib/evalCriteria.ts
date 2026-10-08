@@ -1,4 +1,5 @@
 import { duties, roles, type RoleId } from "@/data/duties";
+import { evidenceForCriterion, evidenceFromText, rolesFromEvidence, type RoleEvidence } from "@/lib/roleAssignments";
 
 function splitScoring(criteria: string) {
   const idx = criteria.search(/기준\s*점수|채점기준|척도\s+점수/);
@@ -79,16 +80,6 @@ export function parseEvalCriteria(criteria: string): EvalCriterion[] {
   return out;
 }
 
-const FALLBACK_ROLES: Record<number, RoleId[]> = {
-  8: ["director", "office", "social"],
-  16: ["social", "nurse", "caregiver"],
-  18: ["office", "social"],
-  36: ["nurse", "caregiver", "therapist"],
-  42: ["nurse", "caregiver"],
-  43: ["director", "office"],
-  45: ["office", "social"],
-};
-
 export const roleShort: Record<RoleId, string> = {
   director: "원장",
   office: "사무",
@@ -100,20 +91,58 @@ export const roleShort: Record<RoleId, string> = {
   all: "전직원",
 };
 
-export function rolesForIndicator(id: number): RoleId[] {
-  const found = new Set<RoleId>();
-  let hasAll = false;
-  for (const d of duties) {
-    if (d.indicator !== id) continue;
-    for (const r of d.roles) {
-      if (r === "all") hasAll = true;
-      else found.add(r);
+export function confirmSlice(method: string, mark: string) {
+  const m = method.match(new RegExp(`기준\\s*${mark}([\\s\\S]*?)(?=기준\\s*[①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮]|$)`));
+  return m ? m[0] : "";
+}
+
+export function criterionEvidence(id: number, mark: string, text: string, loc?: string, confirm?: string): RoleEvidence[] {
+  return evidenceForCriterion(id, mark, { text, confirm, loc: loc || `지표 ${id} 기준 ${mark}` });
+}
+
+export function rolesForCriterion(id: number, mark: string, text: string, confirm?: string): RoleId[] {
+  return rolesFromEvidence(criterionEvidence(id, mark, text, undefined, confirm));
+}
+
+export function rolesForIndicator(id: number, criteriaText?: string, methodText?: string): RoleId[] {
+  if (!criteriaText) {
+    const found = new Set<RoleId>();
+    for (const d of duties) {
+      if (d.indicator !== id) continue;
+      for (const r of d.roles) {
+        if (r !== "all") found.add(r);
+      }
     }
+    return roles.map((r) => r.id).filter((r) => found.has(r));
   }
-  if (found.size === 0 && FALLBACK_ROLES[id]) return FALLBACK_ROLES[id];
-  const list = roles.map((r) => r.id).filter((r) => found.has(r));
-  if (hasAll) list.push("all");
-  return list.length ? list : ["office"];
+  const items = parseEvalCriteria(criteriaText);
+  const found = new Set<RoleId>();
+  for (const it of items) {
+    for (const r of rolesForCriterion(id, it.mark, it.text, confirmSlice(methodText || "", it.mark))) found.add(r);
+  }
+  return roles.map((r) => r.id).filter((r) => found.has(r));
+}
+
+export function assignmentMeta(id: number, criteriaText?: string, methodText?: string): { source: "original" | "none"; directorExplicit: boolean } {
+  const list = criteriaText ? rolesForIndicator(id, criteriaText, methodText) : [];
+  return { source: list.length ? "original" : "none", directorExplicit: list.includes("director") };
+}
+
+export function rolePreparesIndicator(id: number, role: RoleId | "all", criteriaText?: string, methodText?: string): boolean {
+  if (role === "all") return true;
+  const list = rolesForIndicator(id, criteriaText, methodText);
+  return list.includes(role);
+}
+
+export function rolePreparesDuty(
+  d: { roles: RoleId[]; indicator: number; title: string; how: string },
+  role: RoleId | "all",
+  criteriaText?: string,
+  methodText?: string
+): boolean {
+  if (role === "all") return true;
+  const allowed = criteriaText ? rolesForIndicator(d.indicator, criteriaText, methodText) : d.roles.filter((r) => r !== "all");
+  return allowed.includes(role);
 }
 
 export function checkKey(indicatorId: number, mark: string, role: RoleId) {
@@ -122,4 +151,23 @@ export function checkKey(indicatorId: number, mark: string, role: RoleId) {
 
 export function splitMethodText(text: string) {
   return text.split(METHOD_SPLIT);
+}
+
+export function rolesMentionedIn(text: string): { role: RoleId; label: string }[] {
+  const ev = evidenceFromText(0, "①", text, "");
+  const labels: Record<string, string> = {
+    director: "원장·시설장",
+    office: "사무",
+    social: "사회복지사",
+    nurse: "간호사",
+    caregiver: "요양보호사",
+    therapist: "치료사",
+    nutrition: "영양·조리",
+  };
+  return ev.map((e) => ({ role: e.role, label: labels[e.role] || e.role }));
+}
+
+export function paragraphIsMine(text: string, myRole: RoleId | null | undefined) {
+  if (!myRole || myRole === "all") return false;
+  return evidenceFromText(0, "①", text, "").some((e) => e.role === myRole);
 }

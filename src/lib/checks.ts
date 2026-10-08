@@ -11,3 +11,6 @@ export function mergeChecks(a: Checks, b: Checks): Checks {
 export function checksEqual(a: Checks, b: Checks) {
   return JSON.stringify(a) === JSON.stringify(b);
 }
+
+export const RECHECK_STORAGE = "yoyang-eval-recheck-v1";
+export const ARCHIVE_STORAGE = "yoyang-eval-check-archive-v1";

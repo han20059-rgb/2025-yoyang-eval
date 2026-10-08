@@ -24,9 +24,10 @@ body {
 
 .prose-manual {
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
   word-break: break-word;
   line-height: 1.7;
-  font-size: 0.95rem;
+  font-size: 1.0625rem;
 }
 
 mark {
