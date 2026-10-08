@@ -43,12 +43,22 @@ export function MethodText({
 export function MethodChips({ methods, pulse }: { methods: { label: string; chip: string }[]; pulse?: boolean }) {
   if (!methods.length) return null;
   return (
-    <span className="inline-flex flex-wrap items-center gap-1">
+    <span className="inline-flex max-w-full flex-wrap items-center gap-1">
       {methods.map((m, i) => (
-        <span key={m.label} className={m.chip} style={{ animationDelay: `${i * 0.18}s` }}>
-          {pulse ? m.label : m.label}
+        <span key={m.label} className={m.chip} style={pulse ? { animationDelay: `${i * 0.18}s` } : undefined}>
+          {m.label}
         </span>
       ))}
+    </span>
+  );
+}
+
+export function MethodHeading({ methods, isNew }: { methods: { label: string; chip: string }[]; isNew?: boolean }) {
+  if (!methods.length && !isNew) return null;
+  return (
+    <span className="inline-flex max-w-full flex-wrap items-center gap-1">
+      <MethodChips methods={methods} pulse />
+      {isNew ? <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">신설</span> : null}
     </span>
   );
 }

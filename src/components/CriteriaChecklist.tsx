@@ -1,6 +1,6 @@
 "use client";
 
-import { MethodChips, MethodText } from "@/components/MethodText";
+import { MethodHeading, MethodText } from "@/components/MethodText";
 import { ProgressCounts } from "@/components/ProgressBoard";
 import { useAssignments } from "@/components/AssignmentProvider";
 import { useEvalSession } from "@/components/EvalSession";
@@ -131,7 +131,7 @@ export function CriteriaChecklist({
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
                 <span className="text-lg font-bold text-(--teal)">{it.mark}</span>
-                <MethodChips methods={it.methods} pulse />
+                <MethodHeading methods={it.methods} isNew={it.isNew} />
                 {needsRecheck(indicator.id, it.mark) ? (
                   <span className="rounded-full bg-amber-100 px-2 py-1 text-xs text-amber-900">재확인 필요</span>
                 ) : null}

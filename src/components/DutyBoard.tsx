@@ -52,8 +52,8 @@ export function DutyBoard({ indicators }: { indicators: Indicator[] }) {
     <section className="space-y-4">
       <div>
         <p className="text-xs font-medium tracking-wide text-(--teal)">현장에서 바로 쓰는 일정</p>
-        <h2 className="text-xl font-bold">해야 할 일</h2>
-        <p className="mt-1 text-sm text-stone-600">내 직종을 고른 뒤 주기를 고르세요. 지표 준비 완료와 이 목록의 수행은 다릅니다.</p>
+        <h2 className="text-xl font-bold">정기 업무</h2>
+        <p className="mt-1 text-sm text-stone-600">매일·매주·매월 업무입니다. 지표 준비 완료와 이 목록의 수행은 다릅니다.</p>
       </div>
       <div className="space-y-2">
         <p className="text-xs text-stone-500">직종</p>
@@ -126,14 +126,14 @@ export function DutyBoard({ indicators }: { indicators: Indicator[] }) {
                   })()}
                   <a
                     className="inline-flex min-h-11 items-center text-(--teal) underline"
-                    href={`/indicators/${d.indicator}${d.mark ? `#crit-${d.indicator}-${d.mark}` : "#checklist"}`}
+                    href={`/indicators/${d.indicator}${d.mark ? `#crit-${d.indicator}-${d.mark}` : "#source"}`}
                     onClick={(e) => {
                       sessionStorage.setItem(
                         "eval-duty-ui",
                         JSON.stringify({ period, open: key, scroll: window.scrollY, viewRole: role })
                       );
                       e.preventDefault();
-                      const hash = d.mark ? `crit-${d.indicator}-${d.mark}` : "checklist";
+                      const hash = d.mark ? `crit-${d.indicator}-${d.mark}` : "source";
                       window.location.assign(`/indicators/${d.indicator}#${hash}`);
                     }}
                   >

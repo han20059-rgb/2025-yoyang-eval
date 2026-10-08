@@ -7,6 +7,38 @@ import type { ExtractedImage, ExtractedTable, FileExtractResult, PageExtract } f
 
 type PdfItem = { x: number; y: number; str: string; w: number; h: number };
 
+function headingTitleFromItems(items: PdfItem[]) {
+  const head = items.find((it) => /^평가지표\s+\d+(?!\s*[\(（])/.test(it.str));
+  if (!head) return "";
+  const titleItems = items.filter((it) => {
+    if (it.x >= 120) return false;
+    if (it.y >= head.y - 3) return false;
+    if (it.y <= head.y - 58) return false;
+    if (/^평가지표/.test(it.str)) return false;
+    if (/^(점수|평가방법|평가기준|\d+)$/.test(it.str)) return false;
+    return true;
+  });
+  titleItems.sort((a, b) => b.y - a.y || a.x - b.x);
+  return titleItems.map((it) => it.str).join(" ").replace(/\s+/g, " ").trim();
+}
+
+function joinLine(items: PdfItem[]) {
+  const sorted = [...items].sort((a, b) => a.x - b.x);
+  if (!sorted.length) return "";
+  let out = sorted[0].str;
+  for (let i = 1; i < sorted.length; i++) {
+    const prev = sorted[i - 1];
+    const cur = sorted[i];
+    const gap = cur.x - (prev.x + (prev.w || 0));
+    const hangul = /[\uac00-\ud7a3]$/.test(prev.str) && /^[\uac00-\ud7a3]/.test(cur.str);
+    const punct = /[\uac00-\ud7a3]$/.test(prev.str) && /^[?!.，,]$/.test(cur.str);
+    const tight = gap < Math.max(1.4, (prev.w || 10) * 0.28);
+    if (tight && (hangul || punct)) out += cur.str;
+    else out += ` ${cur.str}`;
+  }
+  return out;
+}
+
 function joinColumn(arr: PdfItem[]) {
   const sorted = [...arr].sort((a, b) => (Math.abs(a.y - b.y) > 2 ? b.y - a.y : a.x - b.x));
   const lines: string[] = [];
@@ -17,12 +49,12 @@ function joinColumn(arr: PdfItem[]) {
       cur.push(it);
       curY = curY === null ? it.y : curY;
     } else {
-      lines.push(cur.map((c) => c.str).join(" "));
+      lines.push(joinLine(cur));
       cur = [it];
       curY = it.y;
     }
   }
-  if (cur.length) lines.push(cur.map((c) => c.str).join(" "));
+  if (cur.length) lines.push(joinLine(cur));
   return lines.join("\n");
 }
 
@@ -113,6 +145,7 @@ export async function extractPdf(buf: Buffer, fileName: string): Promise<FileExt
     const leftText = joinColumn(left);
     const rightText = joinColumn(right);
     const fullText = joinColumn(all);
+    const headingTitle = headingTitleFromItems(all);
 
     const ops = await page.getOperatorList();
     let imageCount = 0;
@@ -192,6 +225,7 @@ export async function extractPdf(buf: Buffer, fileName: string): Promise<FileExt
       text,
       left: ocrLeft,
       right: ocrRight,
+      headingTitle,
       charCount: text.replace(/\s/g, "").length,
       imageCount,
       ocrUsed,

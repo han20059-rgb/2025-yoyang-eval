@@ -13,6 +13,7 @@ type Ctx = {
   setDemoRole: (r: RoleId) => void;
   startDemo: () => void;
   exitDemo: () => void;
+  setDemoAdmin: (v: boolean) => void;
   refresh: () => Promise<void>;
 };
 
@@ -35,7 +36,11 @@ export function EvalSessionProvider({ children }: { children: ReactNode }) {
   const refresh = useCallback(async () => {
     if (sessionStorage.getItem("eval-demo") === "1") {
       setMode("demo");
-      setIdentity({ ...DEMO_IDENTITY, evalRole: (sessionStorage.getItem("eval-demo-role") as RoleId) || "social" });
+      setIdentity({
+        ...DEMO_IDENTITY,
+        evalRole: (sessionStorage.getItem("eval-demo-role") as RoleId) || "social",
+        isAdmin: sessionStorage.getItem("eval-demo-admin") !== "0",
+      });
       return;
     }
     const res = await fetch("/api/staff/me", { credentials: "include" });
@@ -58,7 +63,7 @@ export function EvalSessionProvider({ children }: { children: ReactNode }) {
     const orig = window.fetch.bind(window);
     window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
       const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
-      if (/\/api\/(prep|staff|manuals|assignments|admin)(\/|$|\?)/.test(url)) {
+      if (/\/api\/(prep|staff|manuals|assignments|admin|directives|workflows)(\/|$|\?)/.test(url)) {
         return Promise.resolve(new Response(JSON.stringify({ error: "시연 모드에서는 실제 API에 접근하지 않습니다." }), { status: 403, headers: { "Content-Type": "application/json" } }));
       }
       return orig(input, init);
@@ -68,15 +73,26 @@ export function EvalSessionProvider({ children }: { children: ReactNode }) {
     };
   }, [mode]);
 
+  const setDemoAdmin = useCallback((v: boolean) => {
+    sessionStorage.setItem("eval-demo-admin", v ? "1" : "0");
+    setIdentity((prev) => (prev ? { ...prev, isAdmin: v } : prev));
+  }, []);
+
   const startDemo = useCallback(() => {
     sessionStorage.setItem("eval-demo", "1");
     sessionStorage.setItem("eval-demo-role", "social");
     sessionStorage.setItem("eval-demo-checks", "{}");
     sessionStorage.removeItem("eval-demo-view-role");
+    sessionStorage.setItem("eval-demo-admin", "1");
+    sessionStorage.removeItem("eval-demo-overrides");
+    sessionStorage.removeItem("eval-demo-directives");
+    sessionStorage.removeItem("eval-demo-workflows");
     window.dispatchEvent(new Event("yoyang-demo-progress"));
+    window.dispatchEvent(new Event("yoyang-workflows"));
+    window.dispatchEvent(new Event("yoyang-admin"));
     setDemoRole("social");
     setMode("demo");
-    setIdentity({ ...DEMO_IDENTITY, isAdmin: false });
+    setIdentity({ ...DEMO_IDENTITY, isAdmin: true });
   }, []);
 
   const exitDemo = useCallback(() => {
@@ -84,8 +100,13 @@ export function EvalSessionProvider({ children }: { children: ReactNode }) {
     sessionStorage.removeItem("eval-demo-role");
     sessionStorage.removeItem("eval-demo-checks");
     sessionStorage.removeItem("eval-demo-view-role");
+    sessionStorage.removeItem("eval-demo-admin");
+    sessionStorage.removeItem("eval-demo-overrides");
+    sessionStorage.removeItem("eval-demo-directives");
+    sessionStorage.removeItem("eval-demo-workflows");
     window.dispatchEvent(new Event("yoyang-demo-progress"));
     window.dispatchEvent(new Event("yoyang-progress"));
+    window.dispatchEvent(new Event("yoyang-workflows"));
     setMode("anon");
     setIdentity(null);
     setDemoRole("social");
@@ -107,9 +128,10 @@ export function EvalSessionProvider({ children }: { children: ReactNode }) {
       },
       startDemo,
       exitDemo,
+      setDemoAdmin,
       refresh,
     }),
-    [mode, identity, demoRole, startDemo, exitDemo, refresh]
+    [mode, identity, demoRole, startDemo, exitDemo, setDemoAdmin, refresh]
   );
 
   return <EvalSessionContext.Provider value={value}>{children}</EvalSessionContext.Provider>;

@@ -109,10 +109,6 @@ export function AssignmentBoard({ indicators }: { indicators: Indicator[] }) {
   const targets = filtered.filter((r) => selected.includes(`${r.i.id}:${r.it.mark}`));
 
   async function save() {
-    if (!reason.trim() && targets.some((t) => draftRoles.some((r) => !t.manual.includes(r)))) {
-      setMsg("원문과 다른 배정에는 변경 사유가 필요합니다.");
-      return;
-    }
     setMsg("저장 중");
     const changes = targets.map((t) => ({
       indicatorId: t.i.id,
@@ -256,7 +252,7 @@ export function AssignmentBoard({ indicators }: { indicators: Indicator[] }) {
           ))}
         </div>
         <input value={staffNames} onChange={(e) => setStaffNames(e.target.value)} placeholder="직원 이름(쉼표, 선택)" className="min-h-11 w-full rounded-xl border px-3" />
-        <textarea value={reason} onChange={(e) => setReason(e.target.value)} placeholder="변경 사유(원문과 다르면 필수)" className="min-h-24 w-full rounded-xl border px-3 py-2" />
+        <textarea value={reason} onChange={(e) => setReason(e.target.value)} placeholder="변경 사유(선택)" className="min-h-24 w-full rounded-xl border px-3 py-2" />
         <button type="button" className="min-h-11 w-full rounded-xl bg-(--teal) text-white" onClick={() => setPreview(true)}>저장 전 확인</button>
       </section>
 

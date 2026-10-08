@@ -4,6 +4,7 @@ import { Header } from "@/components/Header";
 import { EvalSessionProvider } from "@/components/EvalSession";
 import { AssignmentProvider } from "@/components/AssignmentProvider";
 import { ProgressProvider } from "@/components/ProgressProvider";
+import { WorkflowProvider } from "@/components/WorkflowProvider";
 import "./globals.css";
 
 const noto = Noto_Sans_KR({
@@ -23,8 +24,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <EvalSessionProvider>
           <AssignmentProvider>
             <ProgressProvider>
+              <WorkflowProvider>
               <Header />
               <main className="mx-auto max-w-6xl px-3 pb-24 pt-4 sm:px-4 sm:py-6">{children}</main>
+              </WorkflowProvider>
             </ProgressProvider>
           </AssignmentProvider>
         </EvalSessionProvider>

@@ -23,7 +23,12 @@ export function AssignmentProvider({ children }: { children: ReactNode }) {
 
   const reload = useCallback(async () => {
     if (mode === "demo") {
-      setOverrides([]);
+      try {
+        const raw = sessionStorage.getItem("eval-demo-overrides");
+        setOverrides(raw ? (JSON.parse(raw) as AdminOverride[]) : []);
+      } catch {
+        setOverrides([]);
+      }
       setStorage("demo");
       return;
     }
@@ -64,6 +69,11 @@ export function useAssignments() {
   const ctx = useContext(AssignmentContext);
   if (!ctx) throw new Error("AssignmentProvider 필요");
   return ctx;
+}
+
+export function saveDemoOverrides(items: AdminOverride[]) {
+  sessionStorage.setItem("eval-demo-overrides", JSON.stringify(items));
+  window.dispatchEvent(new Event("yoyang-admin"));
 }
 
 export function markRolesRecheck(indicatorId: number, mark: string, newRoles: RoleId[]) {

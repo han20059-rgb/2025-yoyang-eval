@@ -1,36 +1,34 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 2025 시설급여 평가 매뉴얼 앱
 
-## Getting Started
-
-First, run the development server:
+로컬에서 이어서 작업할 때:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/han20059-rgb/2025-yoyang-eval.git
+cd 2025-yoyang-eval
+npm install
+cp .env.example .env.local   # 파일이 없으면 아래 이름만 채워도 됩니다
+npm run dev -- -p 3042
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+원문 PDF는 `data/manual-store/official/2025-eval-manual.pdf`, 추출은 `data/manual-store/preview.json`입니다. 미리보기 재생성:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+MANUAL_SKIP_OCR=1 npx tsx scripts/rebuild-preview-from-pdf.ts
+npx tsx scripts/verify-workflows.ts
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Windows PowerShell에서는 `$env:MANUAL_SKIP_OCR='1'` 뒤에 같은 명령을 씁니다.
 
-## Learn More
+## 환경변수 이름
 
-To learn more about Next.js, take a look at the following resources:
+값을 저장소에 넣지 않습니다. 배포(Vercel)와 `.env.local`에만 둡니다.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `SITE_ACCESS_PASSWORD` — 사이트 전체 입장. 관리자 권한 없음. 없으면 입장 화면을 건너뜁니다.
+- `NEXT_PUBLIC_SUPABASE_URL` / `SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` / `SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY` — 서버 전용
+- `EVAL_LOCAL_DATABASE_URL` — 로컬 Postgres가 있을 때만
+- `EVAL_AI_API_KEY` — 없으면 AI 미연결, 실제 호출 없음
+- `EVAL_AI_BASE_URL` / `EVAL_AI_MODEL` / `EVAL_AI_MAX_RUNS_PER_HOUR` — AI를 쓸 때만
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+직원·관리자 로그인은 기존 인증을 유지합니다. 연결 업무 파일 저장은 Vercel에서 차단됩니다.

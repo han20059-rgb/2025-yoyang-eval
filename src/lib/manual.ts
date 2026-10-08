@@ -35,9 +35,10 @@ export async function loadManual(): Promise<Manual> {
         const full = preview.indicators?.find((f) => f && f.id === ind.id) || null;
         return {
           ...ind,
+          name: full?.name && full.name.length >= 2 ? full.name : ind.name,
           fullSource: full,
           localPreview: true,
-          printedPages: full?.printedPages || ind.pages,
+          printedPages: full?.printedPages?.length ? full.printedPages : ind.pages,
         };
       });
     }

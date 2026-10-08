@@ -6,7 +6,8 @@ import { useAssignments } from "@/components/AssignmentProvider";
 import { useEvalSession } from "@/components/EvalSession";
 import { mergeChecks, checksEqual, RECHECK_STORAGE, type Checks } from "@/lib/checks";
 import { combinedRoles } from "@/lib/assignmentMerge";
-import { checkKey, confirmSlice, parseEvalCriteria, rolesForCriterion, type EvalCriterion } from "@/lib/evalCriteria";
+import { parseStaffTags } from "@/lib/situation";
+import { checkKey, confirmSlice, criteriaFromIndicator, rolesForCriterion } from "@/lib/evalCriteria";
 import { getSupabase } from "@/lib/supabase";
 import type { Indicator } from "@/lib/types";
 
@@ -123,10 +124,11 @@ export type PrepEvent = {
 type Ctx = {
   viewRole: RoleId | "all";
   setViewRole: (r: RoleId | "all") => void;
-  isChecked: (indicatorId: number, mark: string, role: RoleId) => boolean;
+  isChecked: (indicatorId: number, mark: string, role: RoleId | string) => boolean;
   needsRecheck: (indicatorId: number, mark: string) => boolean;
-  toggle: (indicatorId: number, mark: string, role: RoleId) => void;
+  toggle: (indicatorId: number, mark: string, role: RoleId | string) => void;
   statsFor: (indicator: Pick<Indicator, "id" | "curr">, onlyRole?: RoleId | "all") => IndicatorStat;
+  checks: Checks;
   saveStatus: SaveStatus;
   saveMessage: string;
   recentEvents: PrepEvent[];
@@ -177,11 +179,20 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [saveMessage, setSaveMessage] = useState("");
   const [recentEvents, setRecentEvents] = useState<PrepEvent[]>([]);
-  const checksRaw = useSyncExternalStore(subscribe, snapshot, () => "{}");
-  const demoChecksRaw = useSyncExternalStore(demoSubscribe, demoSnapshot, () => "{}");
-  const roleRaw = useSyncExternalStore(subscribe, roleSnapshot, () => "all");
-  const demoRoleRaw = useSyncExternalStore(demoSubscribe, demoRoleSnapshot, () => "");
-  const recheckRaw = useSyncExternalStore(subscribe, recheckSnapshot, () => "[]");
+  const [storageReady, setStorageReady] = useState(false);
+  useEffect(() => {
+    setStorageReady(true);
+  }, []);
+  const checksRawLive = useSyncExternalStore(subscribe, snapshot, () => "{}");
+  const demoChecksRawLive = useSyncExternalStore(demoSubscribe, demoSnapshot, () => "{}");
+  const roleRawLive = useSyncExternalStore(subscribe, roleSnapshot, () => "all");
+  const demoRoleRawLive = useSyncExternalStore(demoSubscribe, demoRoleSnapshot, () => "");
+  const recheckRawLive = useSyncExternalStore(subscribe, recheckSnapshot, () => "[]");
+  const checksRaw = storageReady ? checksRawLive : "{}";
+  const demoChecksRaw = storageReady ? demoChecksRawLive : "{}";
+  const roleRaw = storageReady ? roleRawLive : "all";
+  const demoRoleRaw = storageReady ? demoRoleRawLive : "";
+  const recheckRaw = storageReady ? recheckRawLive : "[]";
   const checks = useMemo(() => {
     try {
       return JSON.parse(mode === "demo" ? demoChecksRaw : checksRaw) as Checks;
@@ -279,7 +290,8 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
   }, [mode]);
 
   const isChecked = useCallback(
-    (indicatorId: number, mark: string, role: RoleId) => Boolean(checks[checkKey(indicatorId, mark, role)]),
+    (indicatorId: number, mark: string, role: RoleId | string) =>
+      Boolean(checks[/^s\d+$/.test(role) ? `${indicatorId}:${mark}:${role}` : checkKey(indicatorId, mark, role as RoleId)]),
     [checks]
   );
 
@@ -297,10 +309,10 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     [recheckRaw, assignMap]
   );
 
-  const toggle = useCallback((indicatorId: number, mark: string, role: RoleId) => {
+  const toggle = useCallback((indicatorId: number, mark: string, role: RoleId | string) => {
+    const k = /^s\d+$/.test(role) ? `${indicatorId}:${mark}:${role}` : checkKey(indicatorId, mark, role as RoleId);
     if (mode === "demo") {
       const next = { ...JSON.parse(demoSnapshot()) } as Checks;
-      const k = checkKey(indicatorId, mark, role);
       if (next[k]) delete next[k];
       else next[k] = true;
       writeDemoChecks(next);
@@ -309,7 +321,6 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
       return;
     }
     const prev = { ...readChecks() };
-    const k = checkKey(indicatorId, mark, role);
     const done = !prev[k];
     const optimistic = { ...prev };
     if (done) optimistic[k] = true;
@@ -337,27 +348,30 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
 
   const statsFor = useCallback(
     (indicator: Pick<Indicator, "id" | "curr" | "fullSource">, onlyRole: RoleId | "all" = "all"): IndicatorStat => {
-      const items = parseEvalCriteria(indicator.curr.criteria);
+      const items = criteriaFromIndicator(indicator);
       const method = `${indicator.curr.method}\n${indicator.fullSource?.sections.confirm.text || ""}`;
       const parsed: CriterionStat[] = [];
       for (const it of items) {
+        const ov = assignMap.get(`${indicator.id}:${it.mark}`);
         const dept = combinedRoles(
           rolesForCriterion(indicator.id, it.mark, it.text, confirmSlice(method, it.mark)),
           adminRoles(indicator.id, it.mark),
-          assignMap.get(`${indicator.id}:${it.mark}`)?.excludeRoles
+          ov?.excludeRoles
         ).map((c) => c.role);
-        const target =
-          onlyRole === "all" ? dept : dept.filter((r) => r === onlyRole);
-        if (target.length === 0) continue;
-        const doneRoles = target.filter((r) => checks[checkKey(indicator.id, it.mark, r)]);
-        const leftRoles = target.filter((r) => !checks[checkKey(indicator.id, it.mark, r)]);
+        const staffIds = parseStaffTags(ov?.staffNames || [], ov?.staffIds).map((s) => s.id).filter(Boolean);
+        const roleTarget = onlyRole === "all" ? dept : dept.filter((r) => r === onlyRole);
+        const staffTarget = onlyRole === "all" ? staffIds : [];
+        if (roleTarget.length === 0 && staffTarget.length === 0) continue;
+        const doneRoles = roleTarget.filter((r) => checks[checkKey(indicator.id, it.mark, r)]);
+        const leftRoles = roleTarget.filter((r) => !checks[checkKey(indicator.id, it.mark, r)]);
+        const staffLeft = staffTarget.filter((id) => !checks[`${indicator.id}:${it.mark}:s${id}`]);
         parsed.push({
           mark: it.mark,
-          done: doneRoles.length,
-          total: target.length,
+          done: doneRoles.length + (staffTarget.length - staffLeft.length),
+          total: roleTarget.length + staffTarget.length,
           doneRoles,
           leftRoles,
-          complete: leftRoles.length === 0 && target.length > 0,
+          complete: leftRoles.length === 0 && staffLeft.length === 0 && roleTarget.length + staffTarget.length > 0,
         });
       }
       const done = parsed.filter((p) => p.complete).length;
@@ -375,8 +389,8 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo(
-    () => ({ viewRole, setViewRole, isChecked, needsRecheck, toggle, statsFor, saveStatus, saveMessage, recentEvents }),
-    [viewRole, setViewRole, isChecked, needsRecheck, toggle, statsFor, saveStatus, saveMessage, recentEvents]
+    () => ({ viewRole, setViewRole, isChecked, needsRecheck, toggle, statsFor, checks, saveStatus, saveMessage, recentEvents }),
+    [viewRole, setViewRole, isChecked, needsRecheck, toggle, statsFor, checks, saveStatus, saveMessage, recentEvents]
   );
 
   return <ProgressContext.Provider value={value}>{children}</ProgressContext.Provider>;
@@ -392,6 +406,6 @@ export function useProgressOptional() {
   return useContext(ProgressContext);
 }
 
-export function criteriaOf(indicator: Pick<Indicator, "curr">): EvalCriterion[] {
-  return parseEvalCriteria(indicator.curr.criteria);
+export function criteriaOf(indicator: Pick<Indicator, "id" | "curr" | "fullSource">) {
+  return criteriaFromIndicator(indicator);
 }

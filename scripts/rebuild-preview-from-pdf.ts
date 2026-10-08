@@ -1,9 +1,11 @@
+import { createHash } from "crypto";
 import { readFile, writeFile } from "fs/promises";
 import { extractManualFile } from "../src/lib/extract/index.ts";
 import { parseIndicatorsFromPages } from "../src/lib/extract/parseIndicators.ts";
 
 async function main() {
   const prev = JSON.parse(await readFile("data/manual-store/preview.json", "utf8")) as {
+    editionLabel?: string;
     indicators: { id: number; imageOcr?: { page: number; text: string; ok: boolean; error?: string }[] }[];
   };
   const ocrByPage = new Map<number, { page: number; text: string; ok: boolean; error?: string }>();
@@ -27,7 +29,9 @@ async function main() {
       {
         localPreview: true,
         exposeToStaff: false,
-        editionLabel: "첨부 2025 평가매뉴얼 PDF 로컬 미리보기",
+        editionLabel: prev.editionLabel || "첨부 2025 평가매뉴얼 PDF 로컬 미리보기",
+        pdfFile: "official/2025-eval-manual.pdf",
+        pdfSha12: createHash("sha256").update(pdfBuf).digest("hex").slice(0, 12),
         pageCount: pdf.pageCount,
         indicators: fulls,
       },

@@ -1,0 +1,496 @@
+import { fingerprintOf } from "@/lib/workflows/engine";
+import type { Proposal, Workflow } from "@/lib/workflows/types";
+
+const VER = "local-preview-2025-pdf";
+const HASH = "preview.json";
+
+function wf(
+  partial: Omit<Workflow, "status" | "recheck" | "recheckNote" | "history" | "originalId" | "originalVersion" | "fileHash"> & { id: string }
+): Workflow {
+  return {
+    ...partial,
+    originalId: "local-preview",
+    originalVersion: VER,
+    fileHash: HASH,
+    status: "candidate",
+    recheck: false,
+    recheckNote: "",
+    history: [],
+  };
+}
+
+function proposal(kind: Proposal["kind"], proposed: Workflow, reason: string, facts: string[], interpretations: string[]): Proposal {
+  const marks = proposed.conditions.flatMap((c) => c.marks).join("");
+  return {
+    id: `p-${proposed.id}`,
+    fingerprint: fingerprintOf(kind, proposed.name, proposed.indicatorIds, marks),
+    kind,
+    sample: false,
+    workflowId: proposed.id,
+    proposed,
+    reason,
+    facts,
+    interpretations,
+    sources: proposed.sources,
+    affectedWorkflowIds: [proposed.id],
+    visualCheck: proposed.sources.some((s) => s.visualCheck),
+    status: "open",
+    decideReason: "",
+  };
+}
+
+const seeds: Workflow[] = [
+  wf({
+    id: "wf-staff-welfare",
+    name: "직원 처우개선",
+    description: "운영위원회에서 처우개선 의견을 모아 사업계획·운영규정과 복지제도에 반영합니다.",
+    shortFlow: "운영위 의견 → 사업계획·규정 → 복지제도",
+    indicatorIds: [3, 1, 2, 6],
+    steps: [
+      { id: "s1", order: 1, title: "처우개선 의견 수렴", work: "종사자 대표가 참여한 운영위에서 처우개선 의견을 기록합니다.", evidence: "운영위 회의록·발언 내용" },
+      { id: "s2", order: 2, title: "규정·계획 반영", work: "필요한 경우 운영규정과 연도 사업계획에 반영합니다.", evidence: "개정 규정, 사업계획서" },
+      { id: "s3", order: 3, title: "복지제도 운영", work: "처우개선을 위한 복지 제도를 운영합니다.", evidence: "제도 운영 자료" },
+    ],
+    conditions: [
+      { indicatorId: 3, marks: ["③", "④"], audience: "운영위·종사자 대표", period: "반기 참여, 연 1회 이상 반영", deadline: "", confirmMethod: "기록" },
+      { indicatorId: 6, marks: ["③"], audience: "전 직원", period: "평가 적용기간", deadline: "", confirmMethod: "면담" },
+    ],
+    mustCheck: ["6② 가산금 지출은 다른 처우개선 실적과 중복 인정하지 않음"],
+    duplicateLimits: ["직전 정기평가 결과 가산금의 50% 이상 처우개선 사용과 다른 처우개선 실적이 중복하는 경우 인정하지 않는다."],
+    exceptions: ["대표자겸 직원(대표자인 시설장 포함) 사용 내역은 직원 처우개선 비율에 포함하지 않는다."],
+    kind: "practice",
+    sources: [
+      { indicatorId: 3, mark: "③", quote: "처우개선을 위한 의견을 수렴한다.", filePage: 21, visualCheck: true },
+      { indicatorId: 6, mark: "③", quote: "직원의 처우개선을 위한 다양한 복지 제도를 운영한다.", filePage: 37 },
+      { indicatorId: 6, mark: "②", quote: "직전 정기평가 결과 가산금의 50% 이상을 직원 처우개선을 위해 사용한다.", filePage: 37 },
+    ],
+  }),
+  wf({
+    id: "wf-rights-report",
+    name: "인권교육과 운영위원회 보고",
+    description: "직원 인권교육을 실시한 뒤 직전 교육을 운영위에 보고하고 학대예방 의견을 듣습니다.",
+    shortFlow: "분기 인권교육 → 운영위 보고·의견 청취",
+    indicatorIds: [19, 3],
+    steps: [
+      { id: "s1", order: 1, title: "인권·학대예방 교육", work: "모든 직원에게 분기별 1회 이상 교육을 실시합니다.", evidence: "교육일시·강사·참석 서명" },
+      { id: "s2", order: 2, title: "운영위 보고", work: "직전 교육을 운영위에 보고하고 학대예방 의견을 청취합니다.", evidence: "회의록 보고·청취 내용" },
+    ],
+    conditions: [
+      { indicatorId: 19, marks: ["③"], audience: "모든 직원", period: "분기별 1회 이상", deadline: "", confirmMethod: "기록" },
+      { indicatorId: 3, marks: ["⑤"], audience: "운영위", period: "해당 개최 직전 교육", deadline: "", confirmMethod: "기록" },
+    ],
+    mustCheck: ["보고내용은 해당 운영위원회 개최 직전에 실시한 노인인권보호교육이어야 함"],
+    duplicateLimits: [],
+    exceptions: [],
+    kind: "original",
+    sources: [
+      { indicatorId: 19, mark: "③", quote: "모든 직원에게 노인 인권 및 학대예방교육을 분기별 1회 이상 실시한다.", filePage: 95 },
+      { indicatorId: 3, mark: "⑤", quote: "노인인권보호 교육을 보고하고 노인학대예방을 위한 의견을 청취한다.", filePage: 21, visualCheck: true },
+    ],
+  }),
+  wf({
+    id: "wf-care-cycle",
+    name: "사정·계획·제공·평가·재계획",
+    description: "욕구사정으로 계획을 세우고 제공한 뒤 결과를 평가하고 30일 이내 재작성합니다.",
+    shortFlow: "사정 → 계획·통보 → 제공 → 평가 → 30일 내 재계획",
+    indicatorIds: [24, 25, 37],
+    steps: [
+      { id: "s1", order: 1, title: "종합 욕구사정", work: "반기별 1회 이상, 신규는 급여개시 전(입소당일 포함).", evidence: "사정 기록 11개 항목" },
+      { id: "s2", order: 2, title: "급여제공계획", work: "사정을 바탕으로 반기별 계획을 수립하고 공단에 통보합니다.", evidence: "계획서, 통보 자료" },
+      { id: "s3", order: 3, title: "급여 제공", work: "계획에 따라 제공합니다.", evidence: "제공 기록" },
+      { id: "s4", order: 4, title: "결과평가", work: "급여제공 결과를 정기 평가합니다.", evidence: "일자, 총평, 작성자" },
+      { id: "s5", order: 5, title: "계획 재작성", work: "평가결과를 반영해 개별 계획을 재작성합니다.", evidence: "재작성 계획" },
+    ],
+    conditions: [
+      { indicatorId: 24, marks: ["①"], audience: "모든 수급자", period: "반기별 1회, 신규는 급여개시 전", deadline: "", confirmMethod: "기록" },
+      { indicatorId: 25, marks: ["①", "②", "③"], audience: "모든 수급자", period: "반기별 1회", deadline: "적용시작(반영)일까지 공단 통보", confirmMethod: "기록" },
+      { indicatorId: 37, marks: ["①", "②"], audience: "모든 수급자", period: "정기 평가", deadline: "결과평가일부터 30일 이내 재작성", confirmMethod: "기록, 전산" },
+    ],
+    mustCheck: ["결과평가 후 계획 재작성은 30일 이내", "계획 공단 통보는 적용시작(반영)일까지"],
+    duplicateLimits: [],
+    exceptions: [],
+    kind: "practice",
+    sources: [
+      { indicatorId: 24, mark: "①", quote: "모든 수급자의 종합적인 욕구사정을 반기별 1회 이상 정기적으로 실시한다.", filePage: 125 },
+      { indicatorId: 25, mark: "②", quote: "적용시작(반영)일까지’ 공단에 통보해야 인정함", filePage: 128 },
+      { indicatorId: 37, mark: "②", quote: "급여제공 평가결과를 반영하여 개별 급여제공계획을 30일 이내 재작성한다.", filePage: 155 },
+    ],
+  }),
+  wf({
+    id: "wf-rehab-joint",
+    name: "기능회복과 관절 상태 확인",
+    description: "사정·계획과 기능회복훈련, 개별 훈련, 관절구축 유지 여부를 한 흐름으로 봅니다.",
+    shortFlow: "사정·계획 → 기능회복 계획 → 개별 훈련 → 관절 유지",
+    indicatorIds: [24, 25, 34, 35, 36],
+    steps: [
+      { id: "s1", order: 1, title: "욕구·기능 사정", work: "종합 사정과 계획을 세웁니다.", evidence: "사정·계획 기록" },
+      { id: "s2", order: 2, title: "기능회복훈련 계획", work: "신체 상태를 반영한 훈련 계획을 연 1회 이상 수립합니다.", evidence: "훈련 계획" },
+      { id: "s3", order: 3, title: "개별 훈련", work: "신체기능·기본동작·일상생활동작 훈련을 제공합니다.", evidence: "훈련 기록" },
+      { id: "s4", order: 4, title: "관절 유지 확인", work: "최근 2번 욕구사정 재활영역(관절) 유지를 확인합니다.", evidence: "사정 결과, 전산" },
+    ],
+    conditions: [
+      { indicatorId: 34, marks: ["①"], audience: "해당 수급자", period: "연 1회 이상 계획", deadline: "", confirmMethod: "기록" },
+      { indicatorId: 36, marks: ["①"], audience: "입소 후 수급자", period: "최근 2번 사정", deadline: "", confirmMethod: "전산, 기록" },
+    ],
+    mustCheck: ["관절구축은 최근 2번의 욕구사정 재활영역(관절)으로 확인"],
+    duplicateLimits: [],
+    exceptions: [],
+    kind: "practice",
+    sources: [
+      { indicatorId: 36, mark: "①", quote: "확인방법: 최근 2번의 욕구사정 결과, 재활영역(관절)이 유지된 수급자 수", filePage: 154 },
+      { indicatorId: 34, mark: "①", quote: "계획을 연 1회 이상 수립한다.", filePage: 150, visualCheck: true },
+    ],
+  }),
+  wf({
+    id: "wf-pressure",
+    name: "욕창 위험·예방·간호·회복",
+    description: "욕창위험 평가부터 예방 간호, 발생 시 관리, 치유율까지 연결합니다.",
+    shortFlow: "위험평가 → 예방·간호 → 치유 확인",
+    indicatorIds: [24, 29, 42],
+    steps: [
+      { id: "s1", order: 1, title: "욕창위험 평가", work: "반기별 1회, 신규는 급여개시 전.", evidence: "타당한 평가도구" },
+      { id: "s2", order: 2, title: "예방·간호", work: "고위험 관찰, 보조도구, 체위변경, 욕창간호를 실시합니다.", evidence: "관찰·체위·간호 기록" },
+      { id: "s3", order: 3, title: "치유율", work: "입소 후 완치 비율을 전산 기준으로 확인합니다.", evidence: "공단 전산" },
+    ],
+    conditions: [
+      { indicatorId: 24, marks: ["③"], audience: "모든 수급자", period: "반기별 1회", deadline: "", confirmMethod: "기록" },
+      { indicatorId: 29, marks: ["①", "④", "⑤", "⑥"], audience: "위험·고위험·욕창 수급자", period: "분기 파악, 일 1회 관찰, 2시간 체위", deadline: "", confirmMethod: "기록, 면담, 현장" },
+      { indicatorId: 42, marks: ["①"], audience: "해당 수급자", period: "2022.1월 ~ 2024.12월", deadline: "", confirmMethod: "전산" },
+    ],
+    mustCheck: ["지표 42 적용기간은 일반 적용기간과 다름(2022.1월 ~ 2024.12월)"],
+    duplicateLimits: [],
+    exceptions: [],
+    kind: "practice",
+    sources: [
+      { indicatorId: 24, mark: "③", quote: "모든 수급자의 욕창위험도 평가를 반기별 1회 이상 정기적으로 실시한다.", filePage: 125 },
+      { indicatorId: 42, mark: "①", quote: "적용기간: 2022.1월 ~ 2024.12월", filePage: 167 },
+    ],
+  }),
+  wf({
+    id: "wf-meal",
+    name: "식사 욕구와 대체식 제공",
+    description: "상담·사정·계획의 식사 욕구를 식사(간식) 제공에 반영합니다.",
+    shortFlow: "의견·사정 → 계획 → 식사 반영",
+    indicatorIds: [13, 24, 25, 44],
+    steps: [
+      { id: "s1", order: 1, title: "욕구 확인", work: "상담·사정에서 식사 욕구를 확인합니다.", evidence: "상담·사정 기록" },
+      { id: "s2", order: 2, title: "계획 반영", work: "급여제공계획에 식사 관련 내용을 넣습니다.", evidence: "계획서" },
+      { id: "s3", order: 3, title: "식사 제공", work: "욕구를 반영한 식사(간식)를 월 1회 이상 제공합니다.", evidence: "급여제공 기록" },
+    ],
+    conditions: [
+      { indicatorId: 44, marks: ["①", "②"], audience: "수급자", period: "월 1회 이상", deadline: "", confirmMethod: "기록" },
+    ],
+    mustCheck: ["13① 상담과 13③ 소통은 중복 인정하지 않음"],
+    duplicateLimits: ["기준 ①번 '보호자와의 분기별 상담'은 기준 ③번 '보호자 소통'과 중복된 경우 인정하지 않음"],
+    exceptions: [],
+    kind: "practice",
+    sources: [
+      { indicatorId: 13, mark: "①", quote: "모든 수급자 또는 보호자와의 상담을 실시한다.", filePage: 72 },
+      { indicatorId: 44, mark: "②", quote: "수급자의 욕구를 반영한 식사(간식)를 월 1회 이상 제공한다.", filePage: 170, visualCheck: true },
+    ],
+  }),
+  wf({
+    id: "wf-case",
+    name: "사례관리",
+    description: "사례회의 결과를 급여·개별 서비스·지역사회 자원에 반영하고 해결 여부를 평가합니다.",
+    shortFlow: "사례회의 → 30일 내 반영 → 반영일부터 30일 내 평가",
+    indicatorIds: [38, 25],
+    steps: [
+      { id: "s1", order: 1, title: "사례회의", work: "주기적으로 회의하고 내부 참가자 전원의 의견을 남깁니다.", evidence: "회의록" },
+      { id: "s2", order: 2, title: "급여 반영", work: "회의 다음날부터 30일 이내 급여 등에 반영합니다.", evidence: "계획 변경·제공 기록" },
+      { id: "s3", order: 3, title: "해결 평가", work: "반영일로부터 30일 이내 선정사유 해결 여부를 평가합니다.", evidence: "평가 기록" },
+    ],
+    conditions: [
+      { indicatorId: 38, marks: ["①", "②"], audience: "선정 수급자", period: "주기적 회의", deadline: "회의 다음날부터 30일 이내 반영, 반영일부터 30일 이내 평가", confirmMethod: "기록" },
+    ],
+    mustCheck: ["반영: 회의 다음날부터 30일 이내", "해결 여부 평가: 실제 반영일부터 30일 이내"],
+    duplicateLimits: [],
+    exceptions: [],
+    kind: "original",
+    sources: [
+      {
+        indicatorId: 38,
+        mark: "②",
+        quote: "사례회의를 통해 도출된 사례관리계획을 회의 종료 즉시(회의 다음날부터) 30일 이내 급여 등에 반영하고, 급여 등에 반영일로부터 30일 이내에 사례회의 선정사유 해결여부를 평가한다.",
+        filePage: 157,
+      },
+    ],
+  }),
+  wf({
+    id: "wf-guide-edu",
+    name: "지침 교육과 개별 확인",
+    description: "13개 지침 교육이 개별 지표 확인으로 이어지는지 실무상 묶어 봅니다. 교육만으로 개별 지표가 자동 충족되지 않습니다.",
+    shortFlow: "지침 비치·교육 → 각 지표에서 별도 확인",
+    indicatorIds: [4, 6, 7, 10, 19, 21, 29],
+    steps: [
+      { id: "s1", order: 1, title: "지침 비치", work: "급여제공지침 등 13개 항목을 비치합니다.", evidence: "지침 문서" },
+      { id: "s2", order: 2, title: "교육·숙지", work: "연 1회 이상 교육하고 숙지합니다.", evidence: "교육·면담" },
+      { id: "s3", order: 3, title: "개별 지표 확인", work: "고충, 인권, 낙상, 학대예방, 응급, 욕창 등은 각 지표 기준으로 확인합니다.", evidence: "각 지표 확인방법" },
+    ],
+    conditions: [{ indicatorId: 4, marks: ["①", "③"], audience: "모든 직원", period: "연 1회 이상", deadline: "", confirmMethod: "전산, 면담" }],
+    mustCheck: ["연결된 지표가 교육만으로 자동 충족되지 않음"],
+    duplicateLimits: [],
+    exceptions: [],
+    kind: "practice",
+    sources: [{ indicatorId: 4, mark: "①", quote: "급여제공지침 등 13개 항목을 마련하여 비치하고 있다.", filePage: 26 }],
+  }),
+  wf({
+    id: "wf-staff-grievance",
+    name: "직원 인권침해와 고충처리",
+    description: "직원 인권침해 대응 숙지와 고충처리 절차를 함께 봅니다.",
+    shortFlow: "인권침해 지침 숙지 · 고충처리 절차",
+    indicatorIds: [7, 6],
+    steps: [
+      { id: "s1", order: 1, title: "인권침해 대응", work: "직원 인권침해대응지침을 숙지합니다.", evidence: "면담" },
+      { id: "s2", order: 2, title: "고충처리", work: "고충처리절차를 알고 조치를 받습니다.", evidence: "면담, 조치 기록" },
+    ],
+    conditions: [
+      { indicatorId: 7, marks: ["④"], audience: "직원", period: "평가일 기준 숙지", deadline: "", confirmMethod: "면담" },
+      { indicatorId: 6, marks: ["④"], audience: "직원", period: "평가일 기준", deadline: "", confirmMethod: "면담" },
+    ],
+    mustCheck: [],
+    duplicateLimits: [],
+    exceptions: [],
+    kind: "practice",
+    sources: [
+      { indicatorId: 7, mark: "④", quote: "직원은 「직원」 인권침해대응지침 내용을 숙지하고 있다.", filePage: 41 },
+      { indicatorId: 6, mark: "④", quote: "직원은 고충처리절차를 알고 그에 따른 적절한 조치를 받는다.", filePage: 37 },
+    ],
+  }),
+  wf({
+    id: "wf-voiding",
+    name: "배설관찰과 계획 변경",
+    description: "신규 집중배설관찰 후 계획 변경이 필요하면 다음날까지 반영하고 배설관리 조치를 합니다.",
+    shortFlow: "14일 내 집중관찰 → 필요 시 다음날까지 계획 변경 → 배설관리",
+    indicatorIds: [28, 25],
+    steps: [
+      { id: "s1", order: 1, title: "집중배설관찰", work: "신규는 급여개시일부터 14일 이내, 연속 72시간 관찰표를 작성합니다.", evidence: "집중배설관찰기록표" },
+      { id: "s2", order: 2, title: "계획 변경", work: "변경이 필요하면 다음날까지 반영합니다.", evidence: "변경 계획" },
+      { id: "s3", order: 3, title: "배설관리", work: "필요한 수급자에게 조치를 하고 지체 없이 교환합니다.", evidence: "제공 기록" },
+    ],
+    conditions: [
+      { indicatorId: 28, marks: ["①", "②"], audience: "신규·배설관리 수급자", period: "개시일부터 14일 이내 관찰", deadline: "계획 변경은 다음날까지(공고월 다음 달부터 적용)", confirmMethod: "기록" },
+      { indicatorId: 25, marks: ["④"], audience: "해당 수급자", period: "변경 사유 발생 시", deadline: "다음날까지 반영", confirmMethod: "기록" },
+    ],
+    mustCheck: ["배설관찰 후 필요한 계획 변경은 작성 완료 다음날까지 반영", "이 기한은 평가계획 공고월의 다음 달부터 적용"],
+    duplicateLimits: [],
+    exceptions: [],
+    kind: "original",
+    sources: [
+      { indicatorId: 28, mark: "①", quote: "배설양상 파악 후 급여제공계획 변경이 필요한 경우 집중배설기록지 작성완료일의 다음날까지 반영하여야 인정함", filePage: 135 },
+      { indicatorId: 25, mark: "④", quote: "급여제공계획의 변경이 필요한 경우 그 사유를 기록하고 급여를 제공하는지 확인한다.", filePage: 128 },
+    ],
+  }),
+  wf({
+    id: "wf-fall",
+    name: "낙상위험 평가와 예방",
+    description: "낙상위험 평가 결과를 환경·고위험 표지·이동방법 숙지에 연결합니다.",
+    shortFlow: "낙상위험 평가 → 환경·표지·이동 예방",
+    indicatorIds: [24, 10],
+    steps: [
+      { id: "s1", order: 1, title: "낙상위험 평가", work: "반기별 1회, 신규는 급여개시 전.", evidence: "평가도구" },
+      { id: "s2", order: 2, title: "환경 예방", work: "손잡이, 미끄럼방지, 고위험 표지, 턱 제거, 이동공간, 이동방법 숙지.", evidence: "현장, 면담" },
+    ],
+    conditions: [
+      { indicatorId: 24, marks: ["②"], audience: "모든 수급자", period: "반기별 1회", deadline: "", confirmMethod: "기록" },
+      { indicatorId: 10, marks: ["①", "②", "⑤", "⑥"], audience: "수급자·직원", period: "평가일 환경, 고위험 인지", deadline: "", confirmMethod: "현장, 면담" },
+    ],
+    mustCheck: [],
+    duplicateLimits: [],
+    exceptions: [],
+    kind: "practice",
+    sources: [{ indicatorId: 24, mark: "②", quote: "모든 수급자의 낙상위험도 평가를 반기별 1회 이상 정기적으로 실시한다.", filePage: 125 }],
+  }),
+  wf({
+    id: "wf-oral",
+    name: "구강 문제와 의료 조치",
+    description: "욕구사정에서 구강 문제를 보면 구강 조치와 필요 시 의료 조치를 연결합니다.",
+    shortFlow: "사정 → 구강 조치 → 필요 시 의료",
+    indicatorIds: [24, 26, 39],
+    steps: [
+      { id: "s1", order: 1, title: "구강 문제 확인", work: "종합 사정에서 구강 상태를 확인합니다.", evidence: "사정 항목" },
+      { id: "s2", order: 2, title: "구강 조치", work: "문제가 있는 수급자에게 조치를 합니다.", evidence: "기록" },
+      { id: "s3", order: 3, title: "의료 조치", work: "의료적 조치가 필요하면 조치합니다.", evidence: "기록" },
+    ],
+    conditions: [
+      { indicatorId: 26, marks: ["③"], audience: "구강 문제 수급자", period: "문제 발생 시", deadline: "", confirmMethod: "기록" },
+      { indicatorId: 39, marks: ["②"], audience: "의료 조치 필요 수급자", period: "필요 시", deadline: "", confirmMethod: "기록" },
+    ],
+    mustCheck: [],
+    duplicateLimits: [],
+    exceptions: [],
+    kind: "practice",
+    sources: [
+      { indicatorId: 26, mark: "③", quote: "구강상태에 문제가 있는 수급자에 대하여 적절한 조치를 취한", filePage: 131, visualCheck: true },
+      { indicatorId: 39, mark: "②", quote: "수급자에게 의료적인 조치가 필요한 경우 적절하게 조치한다.", filePage: 159 },
+    ],
+  }),
+  wf({
+    id: "wf-weight",
+    name: "체중·영양 관리",
+    description: "사정의 체중·영양을 체중 측정, 의료 조치, 식사 제공과 연결합니다.",
+    shortFlow: "사정 → 월 1회 체중 → 감소 시 조치·식사",
+    indicatorIds: [24, 40, 39, 44],
+    steps: [
+      { id: "s1", order: 1, title: "체중 측정", work: "모든 수급자 월 1회.", evidence: "체중 기록" },
+      { id: "s2", order: 2, title: "감소 시 조치", work: "과도한 감소 시 의료·식사 조치를 합니다.", evidence: "조치 기록" },
+    ],
+    conditions: [
+      { indicatorId: 40, marks: ["①", "②"], audience: "모든 수급자", period: "월 1회", deadline: "", confirmMethod: "기록" },
+    ],
+    mustCheck: [],
+    duplicateLimits: [],
+    exceptions: [],
+    kind: "practice",
+    sources: [{ indicatorId: 40, mark: "①", quote: "모든 수급자의 체중을 월 1회 측정함", filePage: 163 }],
+  }),
+  wf({
+    id: "wf-bath",
+    name: "목욕 요구 반영",
+    description: "개별 욕구와 보호자 의견을 목욕 시간 조정·제공에 반영합니다.",
+    shortFlow: "욕구·의견 → 목욕 시간 조정·제공",
+    indicatorIds: [13, 16, 27],
+    steps: [
+      { id: "s1", order: 1, title: "요구 확인", work: "상담·개별욕구에서 목욕 시간을 확인합니다.", evidence: "상담, 면담" },
+      { id: "s2", order: 2, title: "목욕 제공", work: "월 5회 이상, 전후 상태를 기록합니다.", evidence: "목욕 기록" },
+    ],
+    conditions: [
+      { indicatorId: 16, marks: ["②"], audience: "수급자", period: "급여 제공 중", deadline: "", confirmMethod: "면담" },
+      { indicatorId: 27, marks: ["①", "②"], audience: "모든 수급자", period: "월 5회 이상", deadline: "", confirmMethod: "기록" },
+    ],
+    mustCheck: [],
+    duplicateLimits: [],
+    exceptions: [],
+    kind: "practice",
+    sources: [{ indicatorId: 16, mark: "②", quote: "수급자는 목욕 급여를 제공받는 시간을 조정할 수 있다.", filePage: 84 }],
+  }),
+  wf({
+    id: "wf-night",
+    name: "야간지침·점검·인계",
+    description: "야간 관련 지침 교육과 야간 점검·인계를 연결합니다. 교육만으로 야간 지표가 충족되지 않습니다.",
+    shortFlow: "지침 교육 → 야간 점검·인계",
+    indicatorIds: [4, 17],
+    steps: [
+      { id: "s1", order: 1, title: "지침 숙지", work: "야간 관련 지침을 교육·숙지합니다.", evidence: "교육" },
+      { id: "s2", order: 2, title: "야간 점검", work: "야간점검일지에 상태·안전을 기록하고 주야 인계합니다.", evidence: "야간점검일지, 인계" },
+    ],
+    conditions: [{ indicatorId: 17, marks: ["①", "②"], audience: "야간·주간 근무자", period: "야간 근무 시", deadline: "", confirmMethod: "기록" }],
+    mustCheck: ["야간 지표는 실제 점검·인계 기록으로 확인"],
+    duplicateLimits: [],
+    exceptions: [],
+    kind: "practice",
+    sources: [{ indicatorId: 17, mark: "①", quote: "야간점검일지: 일자, 점검시간, 수급자상태, 안전점검내용, 점검자명, 특이사항", filePage: 86, visualCheck: true }],
+  }),
+  wf({
+    id: "wf-disaster",
+    name: "시설안전과 재난 대응",
+    description: "설비 점검, 쾌적·피난 안내, 재난 훈련을 한 안전 흐름으로 봅니다.",
+    shortFlow: "설비 점검 → 환경·피난안내 → 반기 훈련",
+    indicatorIds: [12, 9, 11],
+    steps: [
+      { id: "s1", order: 1, title: "설비 관리", work: "소화·경보 월 점검, 작동기능·전기가스 연 1회.", evidence: "점검 기록" },
+      { id: "s2", order: 2, title: "안내·환경", work: "위치도·피난안내도와 실내 안전을 유지합니다.", evidence: "현장" },
+      { id: "s3", order: 3, title: "훈련", work: "수급자·직원 대상 반기별 1회 이상.", evidence: "훈련 자료" },
+    ],
+    conditions: [
+      { indicatorId: 12, marks: ["①", "②", "③", "④"], audience: "시설", period: "월·연", deadline: "", confirmMethod: "기록, 현장" },
+      { indicatorId: 11, marks: ["①"], audience: "수급자·직원", period: "반기별 1회 이상", deadline: "", confirmMethod: "기록" },
+    ],
+    mustCheck: [],
+    duplicateLimits: [],
+    exceptions: [],
+    kind: "practice",
+    sources: [{ indicatorId: 12, mark: "①", quote: "소화설비 및 경보설비를 갖추어 매월 점검하며, 화재위험 요인을 제거한다.", filePage: 65 }],
+  }),
+  wf({
+    id: "wf-program",
+    name: "프로그램과 일정 게시",
+    description: "신체·인지·여가 프로그램 실시와 기관 정보 게시를 연결합니다. 한 프로그램의 여러 지표 중복 인정을 제한합니다.",
+    shortFlow: "사정 → 프로그램 계획·실시 → 내부 게시",
+    indicatorIds: [24, 31, 32, 33, 18],
+    steps: [
+      { id: "s1", order: 1, title: "계획·실시", work: "그룹별 프로그램을 계획하고 주 횟수대로 실시합니다.", evidence: "계획·실시 기록" },
+      { id: "s2", order: 2, title: "정보 게시", work: "급여이용 정보를 내부에 게시합니다.", evidence: "게시물" },
+    ],
+    conditions: [
+      { indicatorId: 31, marks: ["①", "②"], audience: "그룹별 수급자", period: "주 2회 이상", deadline: "", confirmMethod: "기록" },
+    ],
+    mustCheck: ["한 프로그램을 31·32·33에 중복 인정하지 않음", "13② 의견 반영과 31·32·33 의견 반영 중복 제한", "14③ 자원봉사 프로그램과 31·32·33 중복 제한"],
+    duplicateLimits: [
+      "프로그램이 중복한 경우 인정하지 않는다.",
+      "13② 상담결과 급여 반영과 프로그램 의견 반영이 같으면 중복 제한을 원문에서 확인",
+    ],
+    exceptions: [],
+    kind: "practice",
+    sources: [{ indicatorId: 31, mark: "②", quote: "신체기능 프로그램 계획에 따라 주 2회 이상 실시한다.", filePage: 144 }],
+  }),
+  wf({
+    id: "wf-infection",
+    name: "감염 예방과 대응",
+    description: "직원 검진, 수급자 검진, 환경·폐기물, 생애말기 별도 공간 등을 감염 흐름으로 봅니다.",
+    shortFlow: "직원·수급자 검진 ↔ 소독·폐기물·대응",
+    indicatorIds: [22, 5, 23, 9, 20],
+    steps: [
+      { id: "s1", order: 1, title: "검진", work: "직원 연 1회, 수급자 연 1회, 신규는 급여개시 전.", evidence: "검진 자료" },
+      { id: "s2", order: 2, title: "환경·대응", work: "비품 소독, 의료폐기물, 전문소독, 유행 시 조치.", evidence: "소독·배출 기록" },
+    ],
+    conditions: [
+      { indicatorId: 23, marks: ["①", "②"], audience: "수급자", period: "연 1회, 신규는 개시 전(검사일 입소일 포함 30일 이내)", deadline: "입소일까지 제출", confirmMethod: "기록" },
+      { indicatorId: 22, marks: ["①", "②", "③", "④"], audience: "기관", period: "분기 전문소독 등", deadline: "", confirmMethod: "기록" },
+    ],
+    mustCheck: ["신규 수급자 감염병 검진은 급여개시 전, 검사일은 입소일 포함 30일 이내"],
+    duplicateLimits: [],
+    exceptions: [],
+    kind: "practice",
+    sources: [{ indicatorId: 23, mark: "②", quote: "신규수급자의 결핵 검진을 포함한 감염병 건강진단은 검사일이 입소일 포함 30일 이내인 결과를 확인한다.", filePage: 118 }],
+  }),
+  wf({
+    id: "wf-discharge-meds",
+    name: "퇴소 연계와 잔약 처리",
+    description: "퇴소 상담·연계기록과 잔여 의약품 전달·폐기를 연결합니다.",
+    shortFlow: "퇴소 상담·연계기록 → 잔약 전달 또는 폐기",
+    indicatorIds: [39, 30],
+    steps: [
+      { id: "s1", order: 1, title: "연계기록", work: "전원·퇴소 시 상담하고 연계기록지를 제공합니다.", evidence: "연계기록지, 제공 대장" },
+      { id: "s2", order: 2, title: "잔약", work: "의약품을 보호자에게 전달하거나 폐기합니다.", evidence: "전달·폐기 기록" },
+    ],
+    conditions: [
+      { indicatorId: 39, marks: ["③"], audience: "퇴소·전원 수급자", period: "종료 시", deadline: "", confirmMethod: "기록" },
+      { indicatorId: 30, marks: ["⑤"], audience: "퇴소 수급자", period: "퇴소 시", deadline: "", confirmMethod: "기록" },
+    ],
+    mustCheck: [],
+    duplicateLimits: [],
+    exceptions: [],
+    kind: "practice",
+    sources: [{ indicatorId: 30, mark: "⑤", quote: "퇴소한 수급자의 의약품을 보호자에게 전달하거나 폐기한다.", filePage: 140 }],
+  }),
+  wf({
+    id: "wf-privacy-edu",
+    name: "개인정보·CCTV 관리 교육",
+    description: "개인정보·CCTV 내부관리와 전 직원 교육을 지침 교육과 함께 봅니다.",
+    shortFlow: "내부관리계획·열람대장 → 연 1회 교육",
+    indicatorIds: [4, 15],
+    steps: [
+      { id: "s1", order: 1, title: "관리 체계", work: "개인정보 보관과 CCTV 내부관리계획·열람대장을 둡니다.", evidence: "계획, 대장" },
+      { id: "s2", order: 2, title: "교육", work: "모든 직원에게 연 1회 이상 교육합니다.", evidence: "교육 기록" },
+    ],
+    conditions: [{ indicatorId: 15, marks: ["②", "③", "④"], audience: "모든 직원", period: "연 1회 이상 교육", deadline: "", confirmMethod: "기록, 면담" }],
+    mustCheck: [],
+    duplicateLimits: [],
+    exceptions: [],
+    kind: "practice",
+    sources: [{ indicatorId: 15, mark: "③", quote: "폐쇄회로 텔레비전(CCTV) 영상정보 내부관리계획(아래 필수사항 모두 충족)수립은 기록으로 확인한다.", filePage: 77, visualCheck: true }],
+  }),
+];
+
+export function seedProposals(): Proposal[] {
+  return seeds.map((w) =>
+    proposal(
+      "new",
+      w,
+      "기존 검토에서 나온 연결 후보입니다. 원문과 대조했으나 자동 확정하지 않습니다.",
+      w.sources.filter((s) => s.quote).map((s) => `지표 ${s.indicatorId}${s.mark || ""}: ${s.quote}`),
+      ["지표 사이 업무 순서는 원문이 한 문장으로 묶지 않은 경우가 많아 실무상 연결 제안으로 둔 항목이 있습니다."]
+    )
+  );
+}

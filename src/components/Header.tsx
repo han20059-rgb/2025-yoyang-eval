@@ -2,13 +2,15 @@
 
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { AuthBar } from "@/components/AuthBar";
 import { useEvalSession } from "@/components/EvalSession";
 
 const baseNav = [
-  { href: "/", label: "요약" },
+  { href: "/", label: "상황판" },
   { href: "/indicators", label: "지표" },
+  { href: "/duties", label: "정기 업무" },
+  { href: "/workflows", label: "연결 업무" },
 ];
 
 export function Header() {
@@ -16,13 +18,22 @@ export function Header() {
   const pathname = usePathname();
   const { identity, mode } = useEvalSession();
   const [q, setQ] = useState("");
+  const [sessionReady, setSessionReady] = useState(false);
+  useEffect(() => {
+    setSessionReady(true);
+  }, []);
   const nav =
-    mode !== "demo" && identity?.isAdmin
+    sessionReady && identity?.isAdmin
       ? [
           ...baseNav,
-          { href: "/admin/manuals", label: "매뉴얼등록" },
-          { href: "/admin/assignments", label: "담당배정" },
-          { href: "/admin/admins", label: "관리자관리" },
+          ...(mode !== "demo"
+            ? [
+                { href: "/admin/manuals", label: "매뉴얼등록" },
+                { href: "/admin/assignments", label: "담당배정" },
+                { href: "/admin/admins", label: "관리자관리" },
+              ]
+            : []),
+          { href: "/admin/ai-review", label: "AI 연결 검토" },
         ]
       : baseNav;
 
@@ -34,7 +45,7 @@ export function Header() {
   }
 
   return (
-    <header className="relative z-20 border-b border-(--line) bg-(--paper)/90 sm:sticky sm:top-0 sm:backdrop-blur">
+    <header className="relative z-20 border-b border-(--line) bg-(--paper)">
       <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:gap-6">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <Link href="/" className="shrink-0">
@@ -46,7 +57,7 @@ export function Header() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-full px-3 py-1 text-sm ${pathname === item.href ? "bg-(--teal) text-white" : "text-stone-600"}`}
+                className={`inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-full px-3 py-1 text-sm ${pathname === item.href || pathname.startsWith(item.href + "/") ? "bg-(--teal) text-white" : "text-stone-600"}`}
               >
                 {item.label}
               </Link>
@@ -69,7 +80,7 @@ export function Header() {
             <Link
               key={item.href}
               href={item.href}
-              className={`rounded-full px-3 py-1.5 text-sm ${pathname === item.href ? "bg-(--teal) text-white" : "text-stone-600 hover:bg-white"}`}
+                className={`rounded-full px-3 py-1.5 text-sm ${pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href + "/")) ? "bg-(--teal) text-white" : "text-stone-600 hover:bg-white"}`}
             >
               {item.label}
             </Link>

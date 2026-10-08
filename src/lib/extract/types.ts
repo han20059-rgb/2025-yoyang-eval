@@ -63,6 +63,7 @@ export type PageExtract = {
   text: string;
   left: string;
   right: string;
+  headingTitle?: string;
   charCount: number;
   imageCount: number;
   ocrUsed: boolean;

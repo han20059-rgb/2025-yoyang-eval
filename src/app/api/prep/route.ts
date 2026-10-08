@@ -47,7 +47,7 @@ export async function POST(req: Request) {
   if (req.headers.get("x-eval-demo") === "1") {
     return NextResponse.json({ error: "시연 모드에서는 실제 저장을 하지 않습니다." }, { status: 403 });
   }
-  const body = (await req.json()) as { indicatorId: number; mark: string; role: RoleId; done: boolean };
+  const body = (await req.json()) as { indicatorId: number; mark: string; role: string; done: boolean };
   const admin = await requireAdmin(req);
   const staff = admin.ok ? null : await requireStaff(req);
   if (!admin.ok && !staff?.ok) {
@@ -56,8 +56,13 @@ export async function POST(req: Request) {
   const actorName = admin.ok ? admin.identity.name : staff?.ok ? staff.identity.name : "";
   const actorId = admin.ok ? admin.identity.leaveRecordId : staff?.ok ? staff.identity.leaveRecordId : null;
   const actorRole = staff?.ok ? staff.identity.evalRole : null;
+  const staffKey = /^s(\d+)$/.exec(String(body.role || ""));
   if (!admin.ok) {
-    if (!actorRole || actorRole !== body.role) {
+    if (staffKey) {
+      if (Number(staffKey[1]) !== actorId) {
+        return NextResponse.json({ error: "본인 담당 항목만 바꿀 수 있습니다." }, { status: 403 });
+      }
+    } else if (!actorRole || actorRole !== body.role) {
       return NextResponse.json({ error: "본인 평가 직종의 항목만 바꿀 수 있습니다." }, { status: 403 });
     }
   }

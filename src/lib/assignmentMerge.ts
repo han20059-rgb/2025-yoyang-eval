@@ -8,6 +8,7 @@ export type AdminOverride = {
   excludeRoles: RoleId[];
   recheckRoles: RoleId[];
   staffNames: string[];
+  staffIds?: number[];
   reason: string;
   actorName: string;
   updatedAt: string;

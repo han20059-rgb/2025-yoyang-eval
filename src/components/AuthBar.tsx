@@ -1,15 +1,19 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useEvalSession } from "@/components/EvalSession";
 import { roles } from "@/data/duties";
 
 export function AuthBar() {
-  const { mode, identity, startDemo, exitDemo, refresh } = useEvalSession();
+  const { mode, identity, startDemo, exitDemo, setDemoAdmin, refresh } = useEvalSession();
   const [yymmdd, setYymmdd] = useState("");
   const [password, setPassword] = useState("");
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
+  const [sessionReady, setSessionReady] = useState(false);
+  useEffect(() => {
+    setSessionReady(true);
+  }, []);
 
   async function onLogin(e: FormEvent) {
     e.preventDefault();
@@ -32,11 +36,18 @@ export function AuthBar() {
     window.dispatchEvent(new Event("yoyang-admin"));
   }
 
-  if (mode === "demo") {
+  if (sessionReady && mode === "demo") {
     return (
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <span className="rounded-full bg-amber-100 px-3 py-2 font-semibold text-amber-900">시연 모드</span>
-        <span className="text-stone-600">{identity?.name}</span>
+        <span className="text-stone-600">{identity?.name}{identity?.isAdmin ? " · 관리자 시연" : " · 직원 시연"}</span>
+        <button
+          type="button"
+          className="min-h-11 rounded-full border border-stone-300 px-3"
+          onClick={() => setDemoAdmin(!identity?.isAdmin)}
+        >
+          {identity?.isAdmin ? "직원으로 보기" : "관리자로 보기"}
+        </button>
         <button type="button" className="min-h-11 rounded-full border border-stone-300 px-3" onClick={exitDemo}>
           시연 종료
         </button>
@@ -44,7 +55,7 @@ export function AuthBar() {
     );
   }
 
-  if (mode === "staff" && identity) {
+  if (sessionReady && mode === "staff" && identity) {
     return (
       <div className="flex min-w-0 flex-wrap items-center gap-2 text-sm">
         <span className="rounded-full bg-(--teal-soft) px-3 py-2 text-(--teal)">
@@ -71,6 +82,7 @@ export function AuthBar() {
   }
 
   return (
+    <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
     <form className="flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center" onSubmit={(e) => void onLogin(e)}>
       <input
         inputMode="numeric"
@@ -95,10 +107,11 @@ export function AuthBar() {
       <button disabled={busy} className="min-h-11 rounded-full bg-(--teal) px-4 text-sm font-medium text-white">
         로그인
       </button>
-      <button type="button" className="min-h-11 rounded-full border border-stone-300 px-4 text-sm" onClick={startDemo}>
-        시연으로 둘러보기
-      </button>
       {msg ? <span className="text-sm text-amber-800">{msg}</span> : null}
     </form>
+    <button type="button" className="min-h-11 rounded-full border border-stone-300 px-4 text-sm" onClick={startDemo}>
+      시연으로 둘러보기
+    </button>
+    </div>
   );
 }

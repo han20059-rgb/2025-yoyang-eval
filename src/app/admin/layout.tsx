@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { adminFetch } from "@/lib/adminClient";
 import { useEvalSession } from "@/components/EvalSession";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { mode, identity, refresh } = useEvalSession();
+  const pathname = usePathname();
   const [ready, setReady] = useState(false);
   const [admin, setAdmin] = useState(false);
   const [msg, setMsg] = useState("");
@@ -21,6 +23,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     void check();
   }, [mode, identity?.leaveRecordId]);
+
+  if (mode === "demo" && pathname.startsWith("/admin/ai-review")) {
+    return (
+      <div className="space-y-3">
+        <p className="rounded-2xl bg-amber-50 px-4 py-3 text-[15px] leading-7 text-amber-900">
+          시연 검토 화면입니다. AI 미연결이며 결과는 시연용 예시입니다. 실제 저장·운영 DB를 쓰지 않습니다.
+        </p>
+        {children}
+      </div>
+    );
+  }
 
   if (mode === "demo") {
     return (
@@ -62,6 +75,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <a href="/admin/manuals" className="inline-flex min-h-11 items-center rounded-xl border bg-white px-3">매뉴얼 등록</a>
         <a href="/admin/assignments" className="inline-flex min-h-11 items-center rounded-xl border bg-white px-3">담당 배정 관리</a>
         <a href="/admin/admins" className="inline-flex min-h-11 items-center rounded-xl border bg-white px-3">관리자 관리</a>
+        <a href="/admin/ai-review" className="inline-flex min-h-11 items-center rounded-xl border bg-white px-3">AI 연결 검토</a>
         <button type="button" className="min-h-11 rounded-xl border px-3 text-left" onClick={() => void onLogout()}>
           로그아웃
         </button>

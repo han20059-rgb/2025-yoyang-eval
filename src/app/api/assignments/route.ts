@@ -18,6 +18,7 @@ function mapRows(rows: unknown[]) {
       excludeRoles: ((row.exclude_roles as string[]) || []).map((x) => asRole(x)).filter(Boolean),
       recheckRoles: ((row.recheck_roles as string[]) || []).map((x) => asRole(x)).filter(Boolean),
       staffNames: (row.staff_names as string[]) || [],
+      staffIds: ((row.staff_ids as number[]) || []).map((n) => Number(n)).filter(Boolean),
       reason: String(row.reason || ""),
       actorName: String(row.actor_name || ""),
       updatedAt: String(row.updated_at || ""),
@@ -36,7 +37,7 @@ export async function GET(req: Request) {
   }
   if (localDbUrl()) {
     const r = await localServiceQuery(
-      "select indicator_id, mark, roles, exclude_roles, recheck_roles, staff_names, reason, actor_name, updated_at from eval_assignment_overrides"
+      "select indicator_id, mark, roles, exclude_roles, recheck_roles, staff_names, staff_ids, reason, actor_name, updated_at from eval_assignment_overrides"
     );
     if (!r) return NextResponse.json({ error: "담당 배정을 읽지 못했습니다.", items: [], storage: "unready" }, { status: 503 });
     return NextResponse.json({ items: mapRows(r.rows), storage: "supabase", admin: admin.ok });
@@ -53,7 +54,7 @@ export async function GET(req: Request) {
   if (svc) {
     const { data, error } = await svc
       .from("eval_assignment_overrides")
-      .select("indicator_id, mark, roles, exclude_roles, recheck_roles, staff_names, reason, actor_name, updated_at");
+      .select("indicator_id, mark, roles, exclude_roles, recheck_roles, staff_names, staff_ids, reason, actor_name, updated_at");
     if (error) {
       return NextResponse.json({ error: "담당 배정을 읽지 못했습니다.", detail: error.message, items: [] }, { status: 503 });
     }
@@ -69,7 +70,7 @@ export async function POST(req: Request) {
   const gate = await requireAdmin(req);
   if (!gate.ok) return gate.res;
   const body = (await req.json()) as {
-    changes?: { indicatorId: number; mark: string; roles: RoleId[]; excludeRoles?: RoleId[]; staffNames?: string[]; reason?: string }[];
+    changes?: { indicatorId: number; mark: string; roles: RoleId[]; excludeRoles?: RoleId[]; staffNames?: string[]; staffIds?: number[]; reason?: string }[];
   };
   const changes = body.changes || [];
   const actorName = gate.identity.name;
@@ -93,10 +94,10 @@ export async function POST(req: Request) {
       const added = after.filter((r) => !before.includes(r));
       const recheck = [...new Set([...prevRecheck.filter((r) => after.includes(r as RoleId)), ...added])];
       const up = await localServiceQuery(
-        `insert into eval_assignment_overrides(indicator_id, mark, roles, exclude_roles, recheck_roles, staff_names, reason, actor_name, actor_leave_record_id, updated_at)
-         values ($1,$2,$3,$4,$5,$6,$7,$8,$9,now())
-         on conflict (indicator_id, mark) do update set roles=excluded.roles, exclude_roles=excluded.exclude_roles, recheck_roles=excluded.recheck_roles, staff_names=excluded.staff_names, reason=excluded.reason, actor_name=excluded.actor_name, actor_leave_record_id=excluded.actor_leave_record_id, updated_at=now()`,
-        [ch.indicatorId, ch.mark, after, exclude, recheck, ch.staffNames || [], ch.reason || "", actorName, actorId]
+        `insert into eval_assignment_overrides(indicator_id, mark, roles, exclude_roles, recheck_roles, staff_names, staff_ids, reason, actor_name, actor_leave_record_id, updated_at)
+         values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,now())
+         on conflict (indicator_id, mark) do update set roles=excluded.roles, exclude_roles=excluded.exclude_roles, recheck_roles=excluded.recheck_roles, staff_names=excluded.staff_names, staff_ids=excluded.staff_ids, reason=excluded.reason, actor_name=excluded.actor_name, actor_leave_record_id=excluded.actor_leave_record_id, updated_at=now()`,
+        [ch.indicatorId, ch.mark, after, exclude, recheck, ch.staffNames || [], ch.staffIds || [], ch.reason || "", actorName, actorId]
       );
       if (!up) {
         results.push({ indicatorId: ch.indicatorId, mark: ch.mark, ok: false, error: "저장 실패", before, after });
@@ -134,6 +135,7 @@ export async function POST(req: Request) {
         p_exclude_roles: exclude,
         p_staff_names: ch.staffNames || [],
         p_reason: ch.reason || "",
+        p_staff_ids: ch.staffIds || [],
       });
       if (error) {
         results.push({ indicatorId: ch.indicatorId, mark: ch.mark, ok: false, error: error.message, before: [], after });
@@ -149,7 +151,7 @@ export async function POST(req: Request) {
     }
     const { data: prev } = await svc
       .from("eval_assignment_overrides")
-      .select("roles, exclude_roles, recheck_roles")
+      .select("indicator_id, mark, roles, exclude_roles, recheck_roles, staff_names, staff_ids, reason, actor_name, updated_at")
       .eq("indicator_id", ch.indicatorId)
       .eq("mark", ch.mark)
       .maybeSingle();
@@ -164,6 +166,7 @@ export async function POST(req: Request) {
       exclude_roles: exclude,
       recheck_roles: recheck,
       staff_names: ch.staffNames || [],
+      staff_ids: ch.staffIds || [],
       reason: ch.reason || "",
       actor_name: actorName,
       actor_leave_record_id: actorId,
