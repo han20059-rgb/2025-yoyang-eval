@@ -125,7 +125,7 @@ export function AssignmentBoard({ indicators }: { indicators: Indicator[] }) {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      setMsg(data.error || "저장 실패");
+      setMsg(data.error || "담당을 저장하지 못했습니다. 다시 시도해 주세요.");
       setFailed(changes.map((c) => ({ indicatorId: c.indicatorId, mark: c.mark, error: data.error })));
       return;
     }
@@ -145,7 +145,7 @@ export function AssignmentBoard({ indicators }: { indicators: Indicator[] }) {
         <p className="text-xs text-(--teal)">관리자 전용</p>
         <h2 className="text-xl font-bold">담당 배정 관리</h2>
         <p className="mt-1 text-[15px] leading-7 text-stone-600">
-          원문 명시와 관리자 지정을 구분합니다. 기존 완료 이력은 옮기지 않습니다. 저장소: {storage === "unready" ? "미준비(저장 불가)" : storage}
+          원문 명시와 관리자 지정을 구분합니다. 기존 완료 이력은 옮기지 않습니다. {storage === "unready" ? "지금은 서버에 저장할 수 없습니다." : "저장하면 기관 담당 자료에 반영됩니다."}
         </p>
       </div>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">

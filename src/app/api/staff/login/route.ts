@@ -14,13 +14,18 @@ export async function POST(req: Request) {
   if (!/^\d{6}$/.test(yymmdd) || !password) {
     return NextResponse.json({ error: "생년월일 6자리와 비밀번호를 입력해 주세요." }, { status: 400 });
   }
-  const result = await loginStaff(yymmdd, password, !!body.remember);
-  if (!result.ok) return NextResponse.json({ error: result.error }, { status: 401 });
-  const admin = await isStaffAdmin(result.identity.leaveRecordId);
-  const res = NextResponse.json({
-    ok: true,
-    identity: { ...result.identity, isAdmin: admin.admin },
-  });
-  res.headers.set("Set-Cookie", staffCookieHeader(result.token, result.remember));
-  return res;
+  try {
+    const result = await loginStaff(yymmdd, password, !!body.remember);
+    if (!result.ok) return NextResponse.json({ error: result.error }, { status: 401 });
+    const admin = await isStaffAdmin(result.identity.leaveRecordId);
+    const res = NextResponse.json({
+      ok: true,
+      identity: { ...result.identity, isAdmin: admin.admin },
+    });
+    const remember = "remember" in result ? Boolean(result.remember) : !!body.remember;
+    res.headers.set("Set-Cookie", staffCookieHeader(result.token, remember));
+    return res;
+  } catch {
+    return NextResponse.json({ error: "로그인 처리 중 오류가 났습니다. 다시 시도해 주세요." }, { status: 503 });
+  }
 }

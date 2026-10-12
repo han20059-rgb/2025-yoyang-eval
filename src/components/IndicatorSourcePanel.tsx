@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
-import { CriterionWork, type DirStaff } from "@/components/CriterionWork";
+import { type ReactNode } from "react";
+import { CriterionWork } from "@/components/CriterionWork";
+import { useStaffDirectory } from "@/components/useStaffDirectory";
+import { ScoringCriteria } from "@/components/ScoringCriteria";
 import { LawAccordion, OriginalProse, ZoomBox } from "@/components/OriginalProse";
 import { useEvalSession } from "@/components/EvalSession";
-import { adminFetch } from "@/lib/adminClient";
 import { MethodChips, MethodHeading } from "@/components/MethodText";
 import { extractMethods, peelOriginalMethods, uniqueMethods } from "@/lib/evalCriteria";
 import type { RoleId } from "@/data/duties";
@@ -45,7 +46,6 @@ function Block({
 export function IndicatorSourcePanel({
   full,
   indicator,
-  mineOnly: _mineOnly = false,
   myRole = null,
   focusMark,
 }: {
@@ -56,22 +56,15 @@ export function IndicatorSourcePanel({
   focusMark?: string;
 }) {
   const { mode, identity } = useEvalSession();
-  const [staffDir, setStaffDir] = useState<DirStaff[]>([]);
-  useEffect(() => {
-    if (mode === "demo") {
-      setStaffDir([
-        { leaveRecordId: 101, name: "김간호", jobType: "간호사" },
-        { leaveRecordId: 102, name: "이사회", jobType: "사회복지사" },
-        { leaveRecordId: 103, name: "박요양", jobType: "요양보호사" },
-      ]);
-      return;
-    }
-    if (!identity?.isAdmin) return;
-    void adminFetch("/api/admin/staff").then(async (res) => {
-      const data = await res.json().catch(() => ({}));
-      setStaffDir((data.items || []) as DirStaff[]);
-    });
-  }, [mode, identity?.isAdmin]);
+  const staffDirState = useStaffDirectory(Boolean(identity?.isAdmin) && mode !== "demo");
+  const staffDir =
+    mode === "demo"
+      ? [
+          { leaveRecordId: 101, name: "김간호", jobType: "간호사" },
+          { leaveRecordId: 102, name: "이사회", jobType: "사회복지사" },
+          { leaveRecordId: 103, name: "박요양", jobType: "요양보호사" },
+        ]
+      : staffDirState.items;
   const methodNote =
     full.commonMethodNote ||
     (full.criteriaItems || [])
@@ -136,6 +129,9 @@ export function IndicatorSourcePanel({
                     mark={it.mark}
                     originalText={it.text}
                     staffDir={staffDir}
+                    staffDirError={mode === "demo" ? "" : staffDirState.error}
+                    staffDirLoading={mode === "demo" ? false : staffDirState.loading}
+                    onRetryStaffDir={mode === "demo" ? undefined : staffDirState.reload}
                   />
                 ) : null}
               </article>
@@ -149,8 +145,8 @@ export function IndicatorSourcePanel({
       {methodNote && methodNote !== full.commonMethodNote ? <Block title="평가방법" text={methodNote} myRole={myRole} mineOnly={false} /> : null}
       <section className="rounded-2xl border border-stone-200 bg-white p-4">
         <h3 className="text-[16px] font-bold text-(--teal)">채점기준</h3>
-        <div className="mt-2 max-w-full overflow-x-auto [-webkit-overflow-scrolling:touch]">
-          <OriginalProse text={full.sections.scoring.text.replace(/^(?:기준\s*점수\s*)?채점기준\s*/, "")} myRole={myRole} mineOnly={false} />
+        <div className="mt-3">
+          <ScoringCriteria text={full.sections.scoring.text} />
         </div>
       </section>
       {full.sections.periodDefault.text ? <Block title="기본 적용기간" text={full.sections.periodDefault.text} note="평가 주기 메모와는 별도입니다." myRole={myRole} mineOnly={false} /> : null}

@@ -73,7 +73,7 @@ begin
   before_roles := coalesce(before_roles, '{}');
   prev_recheck := coalesce(prev_recheck, '{}');
   added := array(select unnest(after_roles) except select unnest(before_roles));
-  recheck := array(select distinct x from unnest(prev_recheck || added) as x where x = any(after_roles));
+  recheck := array(select distinct v from unnest(prev_recheck || added) as t(v) where v = any(after_roles));
   insert into eval_assignment_overrides(
     indicator_id, mark, roles, exclude_roles, recheck_roles, staff_names, staff_ids, reason, actor_name, actor_leave_record_id, updated_at
   ) values (

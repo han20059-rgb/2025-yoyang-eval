@@ -1,5 +1,5 @@
 import { Noto_Sans_KR } from "next/font/google";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Header } from "@/components/Header";
 import { EvalSessionProvider } from "@/components/EvalSession";
 import { AssignmentProvider } from "@/components/AssignmentProvider";
@@ -17,6 +17,11 @@ export const metadata: Metadata = {
   description: "2021·2025 시설급여 평가 비교와 지표 검색",
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+};
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="ko" className={`${noto.className} h-full`}>
@@ -26,7 +31,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <ProgressProvider>
               <WorkflowProvider>
               <Header />
-              <main className="mx-auto max-w-6xl px-3 pb-24 pt-4 sm:px-4 sm:py-6">{children}</main>
+              <main className="mx-auto max-w-6xl px-3 pb-[max(6rem,env(safe-area-inset-bottom))] pt-3 sm:px-4 sm:py-6">{children}</main>
               </WorkflowProvider>
             </ProgressProvider>
           </AssignmentProvider>

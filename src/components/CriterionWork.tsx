@@ -17,11 +17,17 @@ export function CriterionWork({
   mark,
   originalText,
   staffDir,
+  staffDirError = "",
+  staffDirLoading = false,
+  onRetryStaffDir,
 }: {
   indicator: Indicator;
   mark: string;
   originalText: string;
   staffDir: DirStaff[];
+  staffDirError?: string;
+  staffDirLoading?: boolean;
+  onRetryStaffDir?: () => void;
 }) {
   const { identity, mode } = useEvalSession();
   const { adminRoles, map, reload } = useAssignments();
@@ -94,7 +100,11 @@ export function CriterionWork({
           currentStaff={staff}
           recheckRoles={ov?.recheckRoles || []}
           staffDir={staffDir}
+          staffDirError={staffDirError}
+          staffDirLoading={staffDirLoading}
+          onRetryStaffDir={onRetryStaffDir}
           onSaved={() => reload()}
+          allowEditAfterSave
         />
       ) : null}
       <DirectivePanel

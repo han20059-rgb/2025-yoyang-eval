@@ -13,18 +13,25 @@ export async function isStaffAdmin(leaveRecordId: number): Promise<{ admin: bool
   if (!leaveRecordId) return { admin: false, storage: "unready" };
   if (localDbUrl()) {
     const r = await localServiceQuery("select leave_record_id from eval_admins where leave_record_id=$1 and active=true", [leaveRecordId]);
-    if (!r) return { admin: false, storage: "unready" };
-    return { admin: r.rows.length > 0, storage: "supabase" };
+    if (r && r.rows.length > 0) return { admin: true, storage: "supabase" };
   }
   const sb = evalService() || evalAnon();
   if (!sb) return { admin: false, storage: "unready" };
-  const { data, error } = await sb.rpc("eval_is_staff_admin", { p_leave_record_id: leaveRecordId });
-  if (error) {
-    const table = await sb.from("eval_admins").select("leave_record_id").eq("leave_record_id", leaveRecordId).eq("active", true).maybeSingle();
+  try {
+    const rpc = (await Promise.race([
+      sb.rpc("eval_is_staff_admin", { p_leave_record_id: leaveRecordId }),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error("admin-rpc-timeout")), 15000)),
+    ])) as { data: unknown; error: { message?: string } | null };
+    if (!rpc.error) return { admin: Boolean(rpc.data), storage: "supabase" };
+    const table = await Promise.race([
+      sb.from("eval_admins").select("leave_record_id").eq("leave_record_id", leaveRecordId).eq("active", true).maybeSingle(),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error("admin-table-timeout")), 15000)),
+    ]);
     if (table.error) return { admin: false, storage: "unready" };
     return { admin: Boolean(table.data?.leave_record_id), storage: "supabase" };
+  } catch {
+    return { admin: false, storage: "unready" };
   }
-  return { admin: Boolean(data), storage: "supabase" };
 }
 
 export async function requireAdmin(req: Request): Promise<AdminOk | { ok: false; res: NextResponse }> {

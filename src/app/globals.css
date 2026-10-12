@@ -115,3 +115,10 @@ table {
     min-height: 2.75rem;
   }
 }
+
+input,
+textarea,
+select,
+button {
+  max-width: 100%;
+}

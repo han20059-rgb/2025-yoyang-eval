@@ -13,6 +13,35 @@ function deptOf(jobType: string) {
   return "기타";
 }
 
+function mapLocalRows(rows: Record<string, unknown>[]) {
+  return rows.map((row) => {
+    const jobType = String(row.job_type || "");
+    return {
+      leaveRecordId: Number(row.leave_record_id),
+      name: String(row.name || ""),
+      jobType,
+      dept: deptOf(jobType),
+      canLogin: true,
+    };
+  }).filter((row) => row.leaveRecordId && row.name);
+}
+
+function mapRpcItems(data: unknown) {
+  const rows = Array.isArray(data) ? data : [];
+  return rows
+    .map((raw) => {
+      const row = raw as Record<string, unknown>;
+      return {
+        leaveRecordId: Number(row.leaveRecordId || 0),
+        name: String(row.name || ""),
+        jobType: String(row.jobType || ""),
+        dept: String(row.dept || deptOf(String(row.jobType || ""))),
+        canLogin: Boolean(row.canLogin),
+      };
+    })
+    .filter((row) => row.leaveRecordId && row.name);
+}
+
 export async function GET(req: Request) {
   if (req.headers.get("x-eval-demo") === "1") {
     return NextResponse.json({ error: "시연 모드에서는 직원 목록을 보지 않습니다." }, { status: 403 });
@@ -21,27 +50,25 @@ export async function GET(req: Request) {
   if (!gate.ok) return gate.res;
   if (localDbUrl()) {
     const r = await localServiceQuery("select leave_record_id, name, job_type from eval_local_staff order by name, leave_record_id");
-    if (!r) return NextResponse.json({ error: "직원 목록을 읽지 못했습니다.", storage: "unready" }, { status: 503 });
-    const items = r.rows.map((row) => {
-      const jobType = String(row.job_type || "");
-      return {
-        leaveRecordId: Number(row.leave_record_id),
-        name: String(row.name || ""),
-        jobType,
-        dept: deptOf(jobType),
-        canLogin: true,
-      };
-    });
-    return NextResponse.json({ items, storage: "supabase" });
+    if (r?.rows) {
+      return NextResponse.json({ items: mapLocalRows(r.rows), storage: "supabase" });
+    }
   }
   const token = cookieToken(req);
   const rpc = evalAnon();
   if (rpc && token) {
-    const { data, error } = await rpc.rpc("eval_list_staff_directory", { token });
-    if (!error) return NextResponse.json({ items: data || [], storage: "supabase" });
-    return NextResponse.json({ error: "직원 목록을 읽지 못했습니다.", detail: error.message, items: [] }, { status: 503 });
+    try {
+      const { data, error } = await Promise.race([
+        rpc.rpc("eval_list_staff_directory", { token }),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error("staff-directory-timeout")), 15000)),
+      ]);
+      if (!error) return NextResponse.json({ items: mapRpcItems(data), storage: "supabase" });
+      console.error("[staff-directory]", error.message);
+    } catch (e) {
+      console.error("[staff-directory]", e instanceof Error ? e.message : "rpc");
+    }
+    return NextResponse.json({ error: "직원 목록을 불러오지 못했습니다. 다시 시도해 주세요.", items: [] }, { status: 503 });
   }
-  const svc = evalService();
-  if (!svc) return NextResponse.json({ error: "직원 목록 저장소가 없습니다.", storage: "unready" }, { status: 503 });
-  return NextResponse.json({ error: "직원 목록은 관리자 토큰으로만 읽습니다.", storage: "unready", items: [] }, { status: 503 });
+  if (!evalService()) return NextResponse.json({ error: "직원 목록 저장소가 없습니다.", storage: "unready", items: [] }, { status: 503 });
+  return NextResponse.json({ error: "직원 목록은 관리자 로그인으로만 읽습니다.", storage: "unready", items: [] }, { status: 503 });
 }

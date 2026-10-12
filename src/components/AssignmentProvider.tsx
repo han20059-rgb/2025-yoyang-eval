@@ -22,7 +22,8 @@ export function AssignmentProvider({ children }: { children: ReactNode }) {
   const [storage, setStorage] = useState<Ctx["storage"]>("idle");
 
   const reload = useCallback(async () => {
-    if (mode === "demo") {
+    const demo = mode === "demo" || sessionStorage.getItem("eval-demo") === "1";
+    if (demo) {
       try {
         const raw = sessionStorage.getItem("eval-demo-overrides");
         setOverrides(raw ? (JSON.parse(raw) as AdminOverride[]) : []);
@@ -44,10 +45,13 @@ export function AssignmentProvider({ children }: { children: ReactNode }) {
   }, [mode]);
 
   useEffect(() => {
-    void reload();
+    const id = window.setTimeout(() => void reload(), 0);
     const onAdmin = () => void reload();
     window.addEventListener("yoyang-admin", onAdmin);
-    return () => window.removeEventListener("yoyang-admin", onAdmin);
+    return () => {
+      window.clearTimeout(id);
+      window.removeEventListener("yoyang-admin", onAdmin);
+    };
   }, [reload]);
 
   const map = useMemo(() => overrideMap(overrides), [overrides]);

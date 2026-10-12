@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useWorkflows } from "@/components/WorkflowProvider";
 
 export default function WorkflowsPage() {
-  const { published, persistNote } = useWorkflows();
+  const { published } = useWorkflows();
   const [q, setQ] = useState("");
   const filtered = useMemo(() => {
     const t = q.trim();
@@ -19,7 +19,6 @@ export default function WorkflowsPage() {
         <p className="text-xs text-(--teal)">업무 중심</p>
         <h2 className="text-xl font-bold">연결 업무</h2>
         <p className="mt-1 text-[15px] leading-7 text-stone-600">신규 입소, 처우개선, 사례관리처럼 업무로 찾습니다. 확정된 연결만 보입니다.</p>
-        {persistNote ? <p className="text-sm text-stone-500">{persistNote}</p> : null}
       </div>
       <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="업무명 또는 지표 번호" className="min-h-11 w-full rounded-xl border px-3 text-[16px]" />
       <ul className="space-y-2">

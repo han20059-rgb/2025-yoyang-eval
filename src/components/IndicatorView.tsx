@@ -14,6 +14,7 @@ import { searchIndicators } from "@/lib/search";
 import { IndicatorSourcePanel } from "@/components/IndicatorSourcePanel";
 import { LinkedWorkflows } from "@/components/LinkedWorkflows";
 import { OriginalFiles } from "@/components/OriginalFiles";
+import { ScoringCriteria } from "@/components/ScoringCriteria";
 
 const tabs = [
   { id: "now", label: "이번 평가", short: "이번" },
@@ -103,11 +104,7 @@ function SidePanel({
 
       {scoring.scoring ? (
         <Section kicker="몇 점을 주는가" title="채점기준">
-          {emphasizeMethods ? (
-            <MethodText text={scoring.scoring} query={query} emphasize />
-          ) : (
-            <ManualText text={scoring.scoring} query={query} prevForDiff={prevForDiff} />
-          )}
+          <ScoringCriteria text={scoring.scoring} />
         </Section>
       ) : null}
 

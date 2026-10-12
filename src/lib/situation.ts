@@ -27,13 +27,10 @@ export type SitRow = {
 };
 
 export function parseStaffTags(names: string[], ids?: number[]): SitStaff[] {
-  if (ids?.length) {
-    return names.map((name, i) => ({ name: name.replace(/\|#\d+$/, ""), id: Number(ids[i] || 0) })).filter((s) => s.name);
-  }
-  return names.map((raw) => {
+  return names.map((raw, i) => {
     const m = String(raw).match(/^(.*)\|\#(\d+)$/);
     if (m) return { name: m[1], id: Number(m[2]) };
-    return { name: String(raw), id: 0 };
+    return { name: String(raw).replace(/\|#\d+$/, ""), id: Number(ids?.[i] || 0) };
   }).filter((s) => s.name);
 }
 

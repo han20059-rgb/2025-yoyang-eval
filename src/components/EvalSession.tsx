@@ -43,15 +43,24 @@ export function EvalSessionProvider({ children }: { children: ReactNode }) {
       });
       return;
     }
-    const res = await fetch("/api/staff/me", { credentials: "include" });
-    if (!res.ok) {
+    const ac = new AbortController();
+    const timer = window.setTimeout(() => ac.abort(), 15000);
+    try {
+      const res = await fetch("/api/staff/me", { credentials: "include", signal: ac.signal });
+      if (!res.ok) {
+        setMode("anon");
+        setIdentity(null);
+        return;
+      }
+      const data = await res.json();
+      setMode("staff");
+      setIdentity(data.identity);
+    } catch {
       setMode("anon");
       setIdentity(null);
-      return;
+    } finally {
+      window.clearTimeout(timer);
     }
-    const data = await res.json();
-    setMode("staff");
-    setIdentity(data.identity);
   }, []);
 
   useEffect(() => {

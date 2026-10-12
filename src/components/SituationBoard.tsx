@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AssignPicker, type DirStaff } from "@/components/AssignPicker";
+import { AssignPicker } from "@/components/AssignPicker";
+import { useStaffDirectory } from "@/components/useStaffDirectory";
 import { IndicatorSourcePanel } from "@/components/IndicatorSourcePanel";
 import { useAssignments } from "@/components/AssignmentProvider";
 import { useEvalSession } from "@/components/EvalSession";
 import { useProgress } from "@/components/ProgressProvider";
-import { adminFetch } from "@/lib/adminClient";
 import {
   assigneeGroups,
   assigneeSummary,
@@ -31,7 +31,7 @@ const DEMO_STAFF = [
 
 export function SituationBoard({ indicators }: { indicators: Indicator[] }) {
   const { mode, identity } = useEvalSession();
-  const { map, reload, storage } = useAssignments();
+  const { map, reload } = useAssignments();
   const { checks, needsRecheck, saveStatus, saveMessage } = useProgress();
   const isAdmin = Boolean(identity?.isAdmin);
   const [view, setView] = useState<"indicator" | "assignee">("indicator");
@@ -41,7 +41,7 @@ export function SituationBoard({ indicators }: { indicators: Indicator[] }) {
   const [selected, setSelected] = useState<string | null>(null);
   const [assigneeKey, setAssigneeKey] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [staffDir, setStaffDir] = useState<DirStaff[]>([]);
+  const staffDirState = useStaffDirectory(isAdmin && mode !== "demo");
   const listRef = useRef<HTMLDivElement>(null);
   const restored = useRef(false);
 
@@ -50,11 +50,13 @@ export function SituationBoard({ indicators }: { indicators: Indicator[] }) {
     if (!raw) return;
     try {
       const s = JSON.parse(raw) as { view?: typeof view; filter?: typeof filter; q?: string; page?: number; selected?: string; scroll?: number };
-      if (s.view) setView(s.view);
-      if (s.filter) setFilter(s.filter);
-      if (s.q) setQ(s.q);
-      if (s.page) setPage(s.page);
-      if (s.selected) setSelected(s.selected);
+      queueMicrotask(() => {
+        if (s.view) setView(s.view);
+        if (s.filter) setFilter(s.filter);
+        if (s.q) setQ(s.q);
+        if (s.page) setPage(s.page);
+        if (s.selected) setSelected(s.selected);
+      });
       if (typeof s.scroll === "number") window.setTimeout(() => window.scrollTo(0, s.scroll || 0), 50);
     } catch {
       /* ignore */
@@ -67,18 +69,7 @@ export function SituationBoard({ indicators }: { indicators: Indicator[] }) {
     sessionStorage.setItem(UI_KEY, JSON.stringify({ view, filter, q, page, selected, scroll: window.scrollY }));
   }, [view, filter, q, page, selected]);
 
-  useEffect(() => {
-    if (mode === "demo") {
-      setStaffDir(DEMO_STAFF.map((s) => ({ leaveRecordId: s.id, name: s.name, jobType: s.jobType })));
-      return;
-    }
-    if (isAdmin) {
-      void adminFetch("/api/admin/staff").then(async (res) => {
-        const data = await res.json().catch(() => ({}));
-        setStaffDir((data.items || []) as DirStaff[]);
-      });
-    }
-  }, [mode, isAdmin]);
+  const staffDir = mode === "demo" ? DEMO_STAFF.map((s) => ({ leaveRecordId: s.id, name: s.name, jobType: s.jobType })) : staffDirState.items;
 
   const rows = useMemo(
     () =>
@@ -140,9 +131,13 @@ export function SituationBoard({ indicators }: { indicators: Indicator[] }) {
       <div className={selected ? "max-lg:hidden" : ""}>
         <p className="text-xs text-(--teal)">평가 준비</p>
         <h2 className="text-xl font-bold">평가 준비 상황판</h2>
-        <p className="mt-1 text-[15px] leading-7 text-stone-600">
+        <p className="mt-1 text-[15px] leading-7 text-stone-600" suppressHydrationWarning>
           문제 항목을 고른 뒤 원문과 담당을 확인합니다. 준비 완료는 평가점수가 아닙니다.
-          {mode === "demo" ? " 시연은 메모리만 사용합니다." : ` 저장소: ${storage}`}
+          {mode === "demo"
+            ? " 시연은 이 기기에만 잠시 남고, 서버에는 저장되지 않습니다."
+            : isAdmin
+              ? " 저장하면 기관 담당 자료에 반영됩니다."
+              : ""}
         </p>
         {saveMessage ? <p className="text-sm text-stone-500">{saveMessage}{saveStatus === "saving" ? " · 저장 중" : saveStatus === "saved" ? " · 저장됨" : saveStatus === "failed" ? " · 저장 실패" : ""}</p> : null}
       </div>
@@ -216,9 +211,18 @@ export function SituationBoard({ indicators }: { indicators: Indicator[] }) {
                               {r.mark} {r.done ? "준비됨" : r.assigned ? "미완료" : "미지정"}
                               {r.recheck ? " · 재확인" : ""} · {assigneeSummary(r)}
                             </button>
+                            <div className="flex flex-wrap gap-2 px-2 pb-1">
+                              <Link className="inline-flex min-h-11 items-center text-(--teal) underline" href={`/indicators/${r.indicatorId}#crit-${r.indicatorId}-${r.mark}`}>
+                                지표 상세
+                              </Link>
+                              <button type="button" className="inline-flex min-h-11 items-center text-(--teal) underline" onClick={() => openRow(r.key)}>
+                                원문
+                              </button>
+                            </div>
                             {isAdmin || mode === "demo" ? (
                               <AssignPicker
-                                compact={!r.assigned}
+                                startOpen={false}
+                                allowEditAfterSave={false}
                                 indicatorId={r.indicatorId}
                                 mark={r.mark}
                                 manual={r.manual}
@@ -226,6 +230,9 @@ export function SituationBoard({ indicators }: { indicators: Indicator[] }) {
                                 currentStaff={r.staff}
                                 recheckRoles={r.recheckRoles}
                                 staffDir={staffDir}
+                                staffDirError={mode === "demo" ? "" : staffDirState.error}
+                                staffDirLoading={mode === "demo" ? false : staffDirState.loading}
+                                onRetryStaffDir={mode === "demo" ? undefined : staffDirState.reload}
                                 onSaved={() => reload()}
                               />
                             ) : null}

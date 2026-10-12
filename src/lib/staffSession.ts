@@ -6,6 +6,23 @@ import { mapJobType } from "@/lib/jobMap";
 import type { StaffIdentity } from "@/lib/staffTypes";
 
 const COOKIE = "eval_staff_token";
+const RPC_TIMEOUT_MS = 15000;
+
+function withDeadline<T>(p: PromiseLike<T>, ms: number, message: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error(message)), ms);
+    Promise.resolve(p).then(
+      (v) => {
+        clearTimeout(t);
+        resolve(v);
+      },
+      (e) => {
+        clearTimeout(t);
+        reject(e);
+      }
+    );
+  });
+}
 
 export type { StaffIdentity } from "@/lib/staffTypes";
 
@@ -40,7 +57,15 @@ export async function loginStaff(yymmdd: string, pw: string, remember: boolean) 
   }
   const client = sb();
   if (!client) return { ok: false as const, error: "직원 인증 서버에 연결할 수 없습니다." };
-  const { data, error } = await client.rpc("leave_staff_login", { yymmdd, pw, remember });
+  let data: unknown;
+  let error: { message?: string } | null = null;
+  try {
+    const rpc = await withDeadline(client.rpc("leave_staff_login", { yymmdd, pw, remember }), RPC_TIMEOUT_MS, "auth-rpc-timeout");
+    data = rpc.data;
+    error = rpc.error;
+  } catch {
+    return { ok: false as const, error: "직원 인증 서버 응답이 지연되어 중단했습니다. 다시 시도해 주세요." };
+  }
   if (error) return { ok: false as const, error: "직원 인증을 호출하지 못했습니다." };
   const row = data as { ok?: boolean; error?: string; token?: string; mustChange?: boolean; remember?: boolean };
   if (!row?.ok || !row.token) return { ok: false as const, error: row?.error || "로그인에 실패했습니다." };
@@ -57,7 +82,15 @@ export async function identityFromToken(token: string): Promise<{ ok: true; iden
   if (local) return local;
   const client = sb();
   if (!client) return { ok: false, error: "직원 인증 서버에 연결할 수 없습니다." };
-  const { data, error } = await client.rpc("leave_staff_me", { token });
+  let data: unknown;
+  let error: { message?: string } | null = null;
+  try {
+    const rpc = await withDeadline(client.rpc("leave_staff_me", { token }), RPC_TIMEOUT_MS, "auth-rpc-timeout");
+    data = rpc.data;
+    error = rpc.error;
+  } catch {
+    return { ok: false, error: "로그인 정보를 확인하지 못했습니다. 다시 시도해 주세요." };
+  }
   if (error) return { ok: false, error: "로그인 정보를 확인하지 못했습니다." };
   const row = data as { ok?: boolean; error?: string; leaveRecordId?: number; records?: Record<string, { jobType?: string }> };
   if (!row?.ok || !row.records) return { ok: false, error: row?.error || "로그인이 만료되었습니다." };
