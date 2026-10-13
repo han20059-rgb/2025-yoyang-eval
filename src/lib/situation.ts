@@ -106,6 +106,98 @@ export function sitCounts(rows: SitRow[]) {
   };
 }
 
+export type SitPrepStatus = "done" | "progress" | "open";
+
+export type SitIndicatorCard = {
+  id: number;
+  name: string;
+  score: number;
+  status: SitPrepStatus;
+  doneMarks: number;
+  totalMarks: number;
+  unassigned: boolean;
+  recheck: boolean;
+  assignees: string[];
+  rows: SitRow[];
+};
+
+function uniqueAssignees(list: SitRow[]) {
+  const bits: string[] = [];
+  const seen = new Set<string>();
+  for (const r of list) {
+    for (const c of r.combined) {
+      const label = roleLabel(c.role);
+      if (!seen.has(`r:${label}`)) {
+        seen.add(`r:${label}`);
+        bits.push(label);
+      }
+    }
+    for (const s of r.staff) {
+      if (!seen.has(`s:${s.id || s.name}`)) {
+        seen.add(`s:${s.id || s.name}`);
+        bits.push(s.name);
+      }
+    }
+  }
+  return bits;
+}
+
+export function assigneePreview(names: string[], max = 2) {
+  if (!names.length) return "담당 미지정";
+  if (names.length <= max) return names.join(", ");
+  return `${names.slice(0, max).join(", ")} 외 ${names.length - max}명`;
+}
+
+export function buildSitIndicatorCards(rows: SitRow[], indicators: Indicator[]): SitIndicatorCard[] {
+  const byId = new Map<number, SitRow[]>();
+  for (const r of rows) {
+    const list = byId.get(r.indicatorId) || [];
+    list.push(r);
+    byId.set(r.indicatorId, list);
+  }
+  const cards: SitIndicatorCard[] = [];
+  for (const ind of indicators) {
+    const list = byId.get(ind.id);
+    if (!list?.length) continue;
+    const doneMarks = list.filter((r) => r.done).length;
+    const totalMarks = list.length;
+    const status: SitPrepStatus = doneMarks === totalMarks && totalMarks > 0 ? "done" : doneMarks > 0 ? "progress" : "open";
+    cards.push({
+      id: ind.id,
+      name: ind.name,
+      score: ind.score,
+      status,
+      doneMarks,
+      totalMarks,
+      unassigned: list.some((r) => !r.assigned),
+      recheck: list.some((r) => r.recheck),
+      assignees: uniqueAssignees(list),
+      rows: list,
+    });
+  }
+  return cards.sort((a, b) => a.id - b.id);
+}
+
+export function sitIndicatorCounts(cards: SitIndicatorCard[]) {
+  return {
+    done: cards.filter((c) => c.status === "done").length,
+    progress: cards.filter((c) => c.status === "progress").length,
+    open: cards.filter((c) => c.status === "open").length,
+    unassigned: cards.filter((c) => c.unassigned).length,
+    recheck: cards.filter((c) => c.recheck).length,
+    all: cards.length,
+  };
+}
+
+export function matchesIndicatorFilter(card: SitIndicatorCard, f: SitFilter | "progress" | "all") {
+  if (f === "all") return true;
+  if (f === "done") return card.status === "done";
+  if (f === "open") return card.status === "open";
+  if (f === "progress") return card.status === "progress";
+  if (f === "unassigned") return card.unassigned;
+  return card.recheck;
+}
+
 export function sitProblemScore(r: SitRow) {
   if (!r.assigned) return 0;
   if (r.recheck) return 1;

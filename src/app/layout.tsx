@@ -31,7 +31,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <ProgressProvider>
               <WorkflowProvider>
               <Header />
-              <main className="mx-auto max-w-6xl px-3 pb-[max(6rem,env(safe-area-inset-bottom))] pt-3 sm:px-4 sm:py-6">{children}</main>
+              <main className="mx-auto max-w-6xl px-3 pb-[max(4rem,env(safe-area-inset-bottom))] pt-2 sm:px-4 sm:pt-3 sm:pb-6">{children}</main>
               </WorkflowProvider>
             </ProgressProvider>
           </AssignmentProvider>

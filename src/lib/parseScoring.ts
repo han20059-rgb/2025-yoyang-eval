@@ -147,3 +147,28 @@ export function parseScoring(text: string): ScoringParsed {
 
   return { groups: groups.filter((g) => g.rows.length), notes: trailingNotes, uncertain };
 }
+
+function marksCovered(raw: string): string[] {
+  const compact = (raw || "").replace(/\s+/g, "");
+  if (!compact) return [];
+  const range = compact.match(new RegExp(`^([${MARK_TOKEN}])~([${MARK_TOKEN}])$`));
+  if (range) {
+    const a = MARK_TOKEN.indexOf(range[1]);
+    const b = MARK_TOKEN.indexOf(range[2]);
+    if (a < 0 || b < 0) return [compact];
+    const [from, to] = a <= b ? [a, b] : [b, a];
+    return [...MARK_TOKEN.slice(from, to + 1)];
+  }
+  return compact.split(/[·,，]/).filter(Boolean);
+}
+
+export function scoresForMark(text: string, mark: string): { score: string; condition: string; groupMarks: string; joint: boolean; notes: string[] }[] {
+  const parsed = parseScoring(text || "");
+  return parsed.groups
+    .filter((g) => !g.marks || marksCovered(g.marks).includes(mark))
+    .flatMap((g) => {
+      const covered = marksCovered(g.marks);
+      const joint = covered.length > 1;
+      return g.rows.map((r) => ({ score: r.score, condition: r.condition, groupMarks: g.marks, joint, notes: r.notes }));
+    });
+}

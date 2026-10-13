@@ -16,6 +16,11 @@ html,
 body {
   background: var(--paper);
   color: var(--ink);
+  overflow-x: hidden;
+}
+
+#site-header {
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
 ::selection {
@@ -108,6 +113,66 @@ table {
   max-width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+}
+
+.band-do {
+  background: #eef6f5;
+  border-left: 4px solid #1f5c57;
+}
+.band-when {
+  background: #fff8e7;
+  border-left: 4px solid #b45309;
+}
+.band-deny {
+  background: #fff1e8;
+  border-left: 4px solid #c2410c;
+}
+.band-detail {
+  background: #f4f4f3;
+  border-left: 4px solid #a8a29e;
+}
+
+html.compare-pdf-open,
+body.compare-pdf-open {
+  overflow: hidden;
+}
+
+html.compare-pdf-open .header-aux {
+  display: none;
+}
+
+.textLayer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  line-height: 1;
+  opacity: 1;
+  text-align: initial;
+  transform-origin: 0 0;
+  z-index: 1;
+}
+.textLayer :is(span, br) {
+  color: transparent;
+  position: absolute;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0% 0%;
+  user-select: text;
+}
+.textLayer {
+  --min-font-size: 1;
+  --text-scale-factor: calc(var(--total-scale-factor, var(--scale-factor, 1)) * var(--min-font-size));
+  --min-font-size-inv: 1;
+}
+.textLayer > :not(.markedContent),
+.textLayer .markedContent span:not(.markedContent) {
+  z-index: 1;
+  font-size: calc(var(--text-scale-factor) * var(--font-height, 1));
+  transform: rotate(var(--rotate, 0deg)) scaleX(var(--scale-x, 1));
+}
+.textLayer ::selection {
+  background: rgb(0 100 255 / 0.28);
+  color: transparent;
 }
 
 @media (max-width: 430px) {

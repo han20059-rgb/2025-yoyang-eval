@@ -552,7 +552,9 @@ function applyExclusivePageRanges(fulls: IndicatorFull[], pages: PageExtract[]) 
     const idx = starts.findIndex((s) => s.id === f.id);
     if (idx < 0) continue;
     const from = starts[idx].page;
-    let to = idx + 1 < starts.length ? starts[idx + 1].page - 1 : last;
+    const nextStart = idx + 1 < starts.length ? starts[idx + 1].page : 0;
+    const samePageAsNext = Boolean(nextStart && nextStart === from);
+    let to = samePageAsNext ? from : nextStart ? nextStart - 1 : last;
     if (idx === starts.length - 1) {
       const stopPage = pages.find(
         (p) =>

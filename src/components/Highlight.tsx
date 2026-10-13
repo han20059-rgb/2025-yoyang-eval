@@ -2,7 +2,7 @@ import { escapeRegExp } from "@/lib/search";
 
 export function Highlight({ text, query }: { text: string; query?: string }) {
   const q = query?.trim();
-  if (!q) return <>{text}</>;
+  if (!q) return <span>{text}</span>;
   const pattern = q === "사회복지사" ? `(${escapeRegExp(q)}(?!업))` : `(${escapeRegExp(q)})`;
   const parts = text.split(new RegExp(pattern, "gi"));
   return (
@@ -39,17 +39,10 @@ export function ManualText({
   if (!text?.trim()) {
     return <p className="text-stone-400">해당 내용이 없습니다.</p>;
   }
-  if (!prevForDiff) {
-    return (
-      <div className="prose-manual text-stone-800">
-        <Highlight text={text} query={query} />
-      </div>
-    );
-  }
   return (
     <div className="prose-manual text-stone-800">
-      {text.split("\n").map((line, i) => {
-        const added = isAddedLine(line, prevForDiff);
+      {text.split(/\r?\n/).map((line, i) => {
+        const added = prevForDiff ? isAddedLine(line, prevForDiff) : false;
         if (!line) return <div key={i} className="h-2" />;
         return (
           <div

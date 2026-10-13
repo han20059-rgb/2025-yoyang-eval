@@ -49,8 +49,27 @@ export async function GET(req: Request) {
   const kind = url.searchParams.get("kind");
   const raw = url.searchParams.get("raw") === "1";
   const pageNum = Number(url.searchParams.get("page") || "");
+  if (kind === "meta") {
+    try {
+      const store = join(process.cwd(), "data", "manual-store");
+      const preview = JSON.parse(await readFile(join(store, "preview.json"), "utf8")) as {
+        pdfFile?: string;
+        editionLabel?: string;
+        pdfSha12?: string;
+        pageCount?: number;
+      };
+      return NextResponse.json({
+        fileName: preview.pdfFile || "",
+        editionLabel: preview.editionLabel || "",
+        sha12: preview.pdfSha12 || "",
+        pageCount: preview.pageCount || 0,
+      });
+    } catch {
+      return NextResponse.json({ error: "등록 메타가 없습니다. 확인 필요" }, { status: 404 });
+    }
+  }
   if (kind !== "pdf" && kind !== "hwp") {
-    return NextResponse.json({ error: "kind=pdf 또는 hwp" }, { status: 400 });
+    return NextResponse.json({ error: "kind=pdf, hwp 또는 meta" }, { status: 400 });
   }
   if (kind === "pdf" && !raw) {
     const page = Number.isFinite(pageNum) && pageNum > 0 ? Math.floor(pageNum) : 0;

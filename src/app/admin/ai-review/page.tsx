@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useEvalSession } from "@/components/EvalSession";
 import { useWorkflows } from "@/components/WorkflowProvider";
+import { inReviewPracticeGuides } from "@/lib/practiceGuide";
 import type { Proposal } from "@/lib/workflows/types";
 
 function Compare({ p }: { p: Proposal }) {
@@ -46,6 +47,12 @@ export default function AiReviewPage() {
         {mode === "demo" ? <p className="rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900">시연 · 메모리만 · 실제 DB·AI가 아닙니다.</p> : null}
         <p className="text-sm text-stone-500">{persistNote}</p>
         {state.staleOriginal ? <p className="text-sm text-amber-800">원문이 바뀐 것 같습니다. 재검토가 필요합니다.</p> : null}
+        {inReviewPracticeGuides().length ? (
+          <p className="text-sm text-stone-600">
+            실무 안내 시안(승인 전, 공식 원문 아님): 지표 {inReviewPracticeGuides().map((g) => g.indicatorId).join(", ")}.
+            관리자 승인 전까지 자동 적용하지 않습니다.
+          </p>
+        ) : null}
       </div>
       <div className="flex flex-col gap-2 sm:flex-row">
         <button
