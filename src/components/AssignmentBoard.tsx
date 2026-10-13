@@ -1,18 +1,55 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import { roles, type RoleId } from "@/data/duties";
 import { confirmSlice, criterionEvidence, parseEvalCriteria, rolesForCriterion } from "@/lib/evalCriteria";
 import { combinedRoles, type AdminOverride } from "@/lib/assignmentMerge";
-import { markRolesRecheck, useAssignments } from "@/components/AssignmentProvider";
+import { useAssignments } from "@/components/AssignmentProvider";
 import { adminFetch } from "@/lib/adminClient";
 import type { Indicator } from "@/lib/types";
 
 const UI_KEY = "eval-assign-ui";
+const UI_EVENT = "eval-assign-ui";
 const PAGE = 10;
 const ROLE_OPTS = roles.filter((r) => r.id !== "all");
 
 type Filter = "all" | "open" | "set" | "recheck";
+type AssignUi = { filter: Filter; q: string; page: number; openId: number | null };
+
+const DEFAULT_UI: AssignUi = { filter: "open", q: "", page: 0, openId: null };
+
+function parseAssignUi(raw: string): AssignUi {
+  try {
+    const s = JSON.parse(raw) as Partial<AssignUi>;
+    const filter = s.filter === "all" || s.filter === "open" || s.filter === "set" || s.filter === "recheck" ? s.filter : "open";
+    return {
+      filter,
+      q: typeof s.q === "string" ? s.q : "",
+      page: Number.isFinite(s.page) ? Number(s.page) : 0,
+      openId: typeof s.openId === "number" ? s.openId : null,
+    };
+  } catch {
+    return DEFAULT_UI;
+  }
+}
+
+function readAssignUi() {
+  try {
+    return sessionStorage.getItem(UI_KEY) || JSON.stringify(DEFAULT_UI);
+  } catch {
+    return JSON.stringify(DEFAULT_UI);
+  }
+}
+
+function subscribeAssignUi(cb: () => void) {
+  window.addEventListener(UI_EVENT, cb);
+  return () => window.removeEventListener(UI_EVENT, cb);
+}
+
+function writeAssignUi(prev: AssignUi, patch: Partial<AssignUi>) {
+  sessionStorage.setItem(UI_KEY, JSON.stringify({ ...prev, ...patch }));
+  window.dispatchEvent(new Event(UI_EVENT));
+}
 
 function statusOf(manual: RoleId[], admin: RoleId[]) {
   if (manual.length || admin.length) return "set" as const;
@@ -21,11 +58,10 @@ function statusOf(manual: RoleId[], admin: RoleId[]) {
 
 export function AssignmentBoard({ indicators }: { indicators: Indicator[] }) {
   const { adminRoles, reload, storage, map } = useAssignments();
-  const [filter, setFilter] = useState<Filter>("open");
-  const [q, setQ] = useState("");
+  const uiRaw = useSyncExternalStore(subscribeAssignUi, readAssignUi, () => JSON.stringify(DEFAULT_UI));
+  const ui = parseAssignUi(uiRaw);
+  const { filter, q, page, openId } = ui;
   const [roleQ, setRoleQ] = useState<RoleId | "">("");
-  const [page, setPage] = useState(0);
-  const [openId, setOpenId] = useState<number | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const [draftRoles, setDraftRoles] = useState<RoleId[]>([]);
   const [reason, setReason] = useState("");
@@ -33,23 +69,6 @@ export function AssignmentBoard({ indicators }: { indicators: Indicator[] }) {
   const [preview, setPreview] = useState(false);
   const [msg, setMsg] = useState("");
   const [failed, setFailed] = useState<{ mark: string; indicatorId: number; error?: string }[]>([]);
-
-  useEffect(() => {
-    const raw = sessionStorage.getItem(UI_KEY);
-    if (!raw) return;
-    try {
-      const s = JSON.parse(raw) as { filter?: Filter; q?: string; page?: number; openId?: number };
-      if (s.filter) setFilter(s.filter);
-      if (s.q) setQ(s.q);
-      if (s.page) setPage(s.page);
-      if (s.openId) setOpenId(s.openId);
-    } catch {
-      /* ignore */
-    }
-  }, []);
-  useEffect(() => {
-    sessionStorage.setItem(UI_KEY, JSON.stringify({ filter, q, page, openId, scroll: window.scrollY }));
-  }, [filter, q, page, openId]);
 
   const rows = useMemo(() => {
     return indicators.flatMap((i) => {
@@ -85,18 +104,17 @@ export function AssignmentBoard({ indicators }: { indicators: Indicator[] }) {
     return true;
   });
 
-  const byInd = useMemo(() => {
-    const m = new Map<number, typeof filtered>();
-    for (const r of filtered) {
-      const list = m.get(r.i.id) || [];
-      list.push(r);
-      m.set(r.i.id, list);
-    }
-    return [...m.entries()].sort((a, b) => a[0] - b[0]);
-  }, [filtered]);
+  const grouped = new Map<number, typeof filtered>();
+  for (const r of filtered) {
+    const list = grouped.get(r.i.id) || [];
+    list.push(r);
+    grouped.set(r.i.id, list);
+  }
+  const byInd = [...grouped.entries()].sort((a, b) => a[0] - b[0]);
 
   const pages = Math.max(1, Math.ceil(byInd.length / PAGE));
-  const slice = byInd.slice(page * PAGE, page * PAGE + PAGE);
+  const pageSafe = Math.min(Math.max(0, page), pages - 1);
+  const slice = byInd.slice(pageSafe * PAGE, pageSafe * PAGE + PAGE);
 
   function toggleSel(key: string) {
     setSelected((s) => (s.includes(key) ? s.filter((x) => x !== key) : [...s, key]));
@@ -130,10 +148,6 @@ export function AssignmentBoard({ indicators }: { indicators: Indicator[] }) {
       return;
     }
     setFailed(data.failed || []);
-    for (const t of targets) {
-      const added = draftRoles.filter((r) => !t.admin.includes(r) && !t.manual.includes(r));
-      markRolesRecheck(t.i.id, t.it.mark, added.length ? added : draftRoles);
-    }
     await reload();
     setMsg(data.ok ? "저장됨" : `일부 실패 ${data.failed?.length || 0}건`);
     setPreview(false);
@@ -166,17 +180,14 @@ export function AssignmentBoard({ indicators }: { indicators: Indicator[] }) {
           <button
             key={f}
             type="button"
-            onClick={() => {
-              setFilter(f);
-              setPage(0);
-            }}
+            onClick={() => writeAssignUi(ui, { filter: f, page: 0 })}
             className={`min-h-11 w-full rounded-xl border px-3 text-left text-[16px] ${filter === f ? "border-(--teal) bg-(--teal) text-white" : "border-stone-200 bg-white"}`}
           >
             {f === "all" ? "전체" : f === "open" ? "미지정" : f === "set" ? "배정됨" : "재확인 필요"}
           </button>
         ))}
       </div>
-      <input value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} placeholder="지표·기준 검색" className="min-h-11 w-full rounded-xl border px-3" />
+      <input value={q} onChange={(e) => writeAssignUi(ui, { q: e.target.value, page: 0 })} placeholder="지표·기준 검색" className="min-h-11 w-full rounded-xl border px-3" />
       <select value={roleQ} onChange={(e) => setRoleQ(e.target.value as RoleId | "")} className="min-h-11 w-full rounded-xl border px-3">
         <option value="">직종 전체</option>
         {ROLE_OPTS.map((r) => (
@@ -204,7 +215,7 @@ export function AssignmentBoard({ indicators }: { indicators: Indicator[] }) {
                   <td>{list.every((r) => r.st === "open") ? "미지정" : "배정됨"}</td>
                   <td>{labels.map((r) => ROLE_OPTS.find((x) => x.id === r)?.label).join(" · ") || "—"}</td>
                   <td>
-                    <button type="button" className="min-h-11 text-(--teal) underline" onClick={() => setOpenId(openId === id ? null : id)}>
+                    <button type="button" className="min-h-11 text-(--teal) underline" onClick={() => writeAssignUi(ui, { openId: openId === id ? null : id })}>
                       {openId === id ? "접기" : "펼치기"}
                     </button>
                   </td>
@@ -220,7 +231,7 @@ export function AssignmentBoard({ indicators }: { indicators: Indicator[] }) {
           const ind = list[0].i;
           return (
             <li key={id} className="rounded-xl border bg-white">
-              <button type="button" className="flex min-h-11 w-full items-center justify-between px-3 py-3 text-left" onClick={() => setOpenId(openId === id ? null : id)}>
+              <button type="button" className="flex min-h-11 w-full items-center justify-between px-3 py-3 text-left" onClick={() => writeAssignUi(ui, { openId: openId === id ? null : id })}>
                 <span className="text-[16px] font-semibold">지표 {ind.id} · {ind.name}</span>
                 <span className="text-sm text-stone-500">{list.every((r) => r.st === "open") ? "미지정" : "배정됨"} · {openId === id ? "접기" : "펼치기"}</span>
               </button>
@@ -236,9 +247,9 @@ export function AssignmentBoard({ indicators }: { indicators: Indicator[] }) {
       ) : null}
 
       <div className="flex gap-2">
-        <button type="button" className="min-h-11 flex-1 rounded-xl border" disabled={page <= 0} onClick={() => setPage((p) => p - 1)}>이전</button>
-        <p className="flex min-h-11 items-center px-2 text-sm">{page + 1} / {pages}</p>
-        <button type="button" className="min-h-11 flex-1 rounded-xl border" disabled={page + 1 >= pages} onClick={() => setPage((p) => p + 1)}>다음</button>
+        <button type="button" className="min-h-11 flex-1 rounded-xl border" disabled={pageSafe <= 0} onClick={() => writeAssignUi(ui, { page: pageSafe - 1 })}>이전</button>
+        <p className="flex min-h-11 items-center px-2 text-sm">{pageSafe + 1} / {pages}</p>
+        <button type="button" className="min-h-11 flex-1 rounded-xl border" disabled={pageSafe + 1 >= pages} onClick={() => writeAssignUi(ui, { page: pageSafe + 1 })}>다음</button>
       </div>
 
       <section className="space-y-2 rounded-xl border bg-white p-3">

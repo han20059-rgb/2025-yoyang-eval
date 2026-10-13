@@ -3,7 +3,6 @@ import { requireAdmin } from "@/lib/adminAuth";
 import { cookieToken, requireStaff } from "@/lib/staffSession";
 import { localDbUrl, localServiceQuery } from "@/lib/evalLocalDb";
 import { evalAnon, evalService } from "@/lib/evalSb";
-import type { RoleId } from "@/data/duties";
 
 export const runtime = "nodejs";
 
@@ -19,8 +18,7 @@ export async function GET(req: Request) {
   if (localDbUrl()) {
     const checks = await localServiceQuery("select indicator_id, mark, role, done, updated_at, updated_by_name from eval_org_checks");
     const events = await localServiceQuery("select indicator_id, mark, role, action, actor_name, as_admin, created_at from eval_org_check_events order by created_at desc limit 200");
-    if (!checks || !events) return NextResponse.json({ error: "기관 현황을 읽지 못했습니다.", storage: "unready" }, { status: 503 });
-    return NextResponse.json({ checks: checks.rows, events: events.rows });
+    if (checks && events) return NextResponse.json({ checks: checks.rows, events: events.rows });
   }
   const token = cookieToken(req);
   const rpc = evalAnon();
@@ -67,17 +65,19 @@ export async function POST(req: Request) {
     }
   }
   if (localDbUrl()) {
-    await localServiceQuery(
+    const up = await localServiceQuery(
       `insert into eval_org_checks(indicator_id, mark, role, done, updated_at, updated_by_leave_record_id, updated_by_name)
        values ($1,$2,$3,$4,now(),$5,$6)
        on conflict (indicator_id, mark, role) do update set done=excluded.done, updated_at=now(), updated_by_leave_record_id=excluded.updated_by_leave_record_id, updated_by_name=excluded.updated_by_name`,
       [body.indicatorId, body.mark, body.role, body.done, actorId, actorName]
     );
-    await localServiceQuery(
-      "insert into eval_org_check_events(indicator_id, mark, role, action, actor_leave_record_id, actor_name, as_admin) values ($1,$2,$3,$4,$5,$6,$7)",
-      [body.indicatorId, body.mark, body.role, body.done ? "complete" : "cancel", actorId, actorName, admin.ok]
-    );
-    return NextResponse.json({ ok: true, saved: true });
+    if (up) {
+      await localServiceQuery(
+        "insert into eval_org_check_events(indicator_id, mark, role, action, actor_leave_record_id, actor_name, as_admin) values ($1,$2,$3,$4,$5,$6,$7)",
+        [body.indicatorId, body.mark, body.role, body.done ? "complete" : "cancel", actorId, actorName, admin.ok]
+      );
+      return NextResponse.json({ ok: true, saved: true });
+    }
   }
   const token = cookieToken(req);
   const rpc = evalAnon();

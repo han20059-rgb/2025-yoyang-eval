@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, u
 import { roles, type RoleId } from "@/data/duties";
 import { useAssignments } from "@/components/AssignmentProvider";
 import { useEvalSession } from "@/components/EvalSession";
-import { mergeChecks, checksEqual, RECHECK_STORAGE, type Checks } from "@/lib/checks";
+import { mergeChecks, checksEqual, type Checks } from "@/lib/checks";
 import { combinedRoles } from "@/lib/assignmentMerge";
 import { parseStaffTags } from "@/lib/situation";
 import { checkKey, confirmSlice, criteriaFromIndicator, rolesForCriterion } from "@/lib/evalCriteria";
@@ -54,14 +54,6 @@ function roleSnapshot() {
     return localStorage.getItem(ROLE_STORAGE) || "all";
   } catch {
     return "all";
-  }
-}
-
-function recheckSnapshot() {
-  try {
-    return localStorage.getItem(RECHECK_STORAGE) || "[]";
-  } catch {
-    return "[]";
   }
 }
 
@@ -179,20 +171,19 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [saveMessage, setSaveMessage] = useState("");
   const [recentEvents, setRecentEvents] = useState<PrepEvent[]>([]);
-  const [storageReady, setStorageReady] = useState(false);
-  useEffect(() => {
-    setStorageReady(true);
-  }, []);
+  const clientReady = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
   const checksRawLive = useSyncExternalStore(subscribe, snapshot, () => "{}");
   const demoChecksRawLive = useSyncExternalStore(demoSubscribe, demoSnapshot, () => "{}");
   const roleRawLive = useSyncExternalStore(subscribe, roleSnapshot, () => "all");
   const demoRoleRawLive = useSyncExternalStore(demoSubscribe, demoRoleSnapshot, () => "");
-  const recheckRawLive = useSyncExternalStore(subscribe, recheckSnapshot, () => "[]");
-  const checksRaw = storageReady ? checksRawLive : "{}";
-  const demoChecksRaw = storageReady ? demoChecksRawLive : "{}";
-  const roleRaw = storageReady ? roleRawLive : "all";
-  const demoRoleRaw = storageReady ? demoRoleRawLive : "";
-  const recheckRaw = storageReady ? recheckRawLive : "[]";
+  const checksRaw = clientReady ? checksRawLive : "{}";
+  const demoChecksRaw = clientReady ? demoChecksRawLive : "{}";
+  const roleRaw = clientReady ? roleRawLive : "all";
+  const demoRoleRaw = clientReady ? demoRoleRawLive : "";
   const checks = useMemo(() => {
     try {
       return JSON.parse(mode === "demo" ? demoChecksRaw : checksRaw) as Checks;
@@ -212,15 +203,20 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
           : "all"
   ) as RoleId | "all";
 
+  const shownStatus: SaveStatus = mode === "demo" ? "idle" : saveStatus;
+  const shownMessage =
+    mode === "demo"
+      ? saveMessage.startsWith("시연")
+        ? saveMessage
+        : "시연 데이터는 메모리에만 있습니다."
+      : saveMessage;
+
   useEffect(() => {
-    if (mode === "demo") {
-      setSaveStatus("idle");
-      setSaveMessage("시연 데이터는 메모리에만 있습니다.");
-      return;
-    }
     if (mode !== "staff") return;
+    let cancelled = false;
     void (async () => {
       const res = await fetch("/api/prep", { credentials: "include" });
+      if (cancelled) return;
       if (res.status === 503) {
         setSaveStatus("unready");
         setSaveMessage("기관 현황 DB가 아직 없습니다. 브라우저 값은 임시 캐시일 뿐입니다.");
@@ -232,6 +228,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
         return;
       }
       const data = await res.json();
+      if (cancelled) return;
       const next: Checks = {};
       for (const row of data.checks || []) {
         if (row.done) next[checkKey(row.indicator_id, row.mark, row.role)] = true;
@@ -241,6 +238,9 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
       setSaveStatus("saved");
       setSaveMessage("기관 현황을 불러왔습니다.");
     })();
+    return () => {
+      cancelled = true;
+    };
   }, [mode]);
 
   useEffect(() => {
@@ -298,15 +298,9 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
   const needsRecheck = useCallback(
     (indicatorId: number, mark: string) => {
       const ov = assignMap.get(`${indicatorId}:${mark}`);
-      if (ov?.recheckRoles?.length) return true;
-      try {
-        const keys = JSON.parse(recheckRaw) as string[];
-        return keys.some((k) => k.startsWith(`${indicatorId}:${mark}:`));
-      } catch {
-        return false;
-      }
+      return Boolean(ov?.recheckRoles?.length);
     },
-    [recheckRaw, assignMap]
+    [assignMap]
   );
 
   const toggle = useCallback((indicatorId: number, mark: string, role: RoleId | string) => {
@@ -389,8 +383,8 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo(
-    () => ({ viewRole, setViewRole, isChecked, needsRecheck, toggle, statsFor, checks, saveStatus, saveMessage, recentEvents }),
-    [viewRole, setViewRole, isChecked, needsRecheck, toggle, statsFor, checks, saveStatus, saveMessage, recentEvents]
+    () => ({ viewRole, setViewRole, isChecked, needsRecheck, toggle, statsFor, checks, saveStatus: shownStatus, saveMessage: shownMessage, recentEvents }),
+    [viewRole, setViewRole, isChecked, needsRecheck, toggle, statsFor, checks, shownStatus, shownMessage, recentEvents]
   );
 
   return <ProgressContext.Provider value={value}>{children}</ProgressContext.Provider>;

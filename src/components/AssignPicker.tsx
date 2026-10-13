@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { roles, type RoleId } from "@/data/duties";
-import { saveDemoOverrides, markRolesRecheck, useAssignments } from "@/components/AssignmentProvider";
+import { saveDemoOverrides, useAssignments } from "@/components/AssignmentProvider";
 import { useEvalSession } from "@/components/EvalSession";
 import { adminFetch } from "@/lib/adminClient";
 import { mapJobType } from "@/lib/jobMap";
@@ -90,13 +90,12 @@ export function AssignPicker({
     }
     setSaving(true);
     setMsg("저장 중");
-    const added = pickRoles.filter((r) => !currentRoles.includes(r));
     const payload: AdminOverride = {
       indicatorId,
       mark,
       roles: pickRoles,
       excludeRoles: manual.filter((r) => !pickRoles.includes(r)),
-      recheckRoles: [...new Set([...recheckRoles.filter((r) => pickRoles.includes(r)), ...added])],
+      recheckRoles: recheckRoles.filter((r) => pickRoles.includes(r)),
       staffNames: encodeStaffTags(pickStaff.filter((s) => s.id)),
       staffIds: pickStaff.map((s) => s.id).filter(Boolean),
       reason: "",
@@ -106,7 +105,6 @@ export function AssignPicker({
     if (mode === "demo") {
       const rest = overrides.filter((o) => `${o.indicatorId}:${o.mark}` !== `${indicatorId}:${mark}`);
       saveDemoOverrides([...rest, payload]);
-      if (added.length) markRolesRecheck(indicatorId, mark, added);
       setMsg("");
       setSaving(false);
       setOpen(false);
@@ -136,7 +134,6 @@ export function AssignPicker({
         setMsg(data.error || data.failed?.[0]?.error || "담당을 저장하지 못했습니다. 다시 시도해 주세요.");
         return;
       }
-      if (added.length) markRolesRecheck(indicatorId, mark, added);
       setMsg("");
       setOpen(false);
       await onSaved();

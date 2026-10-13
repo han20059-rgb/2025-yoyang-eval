@@ -13,4 +13,15 @@ export function checksEqual(a: Checks, b: Checks) {
 }
 
 export const RECHECK_STORAGE = "yoyang-eval-recheck-v1";
+export const MANUAL_RECHECK_PREVIEW_STORAGE = "yoyang-eval-manual-recheck-preview-v1";
 export const ARCHIVE_STORAGE = "yoyang-eval-check-archive-v1";
+
+export function preserveManualRecheckPreview() {
+  try {
+    if (localStorage.getItem(MANUAL_RECHECK_PREVIEW_STORAGE)) return;
+    const old = localStorage.getItem(RECHECK_STORAGE);
+    if (old && old !== "[]") localStorage.setItem(MANUAL_RECHECK_PREVIEW_STORAGE, old);
+  } catch {
+    /* ignore */
+  }
+}

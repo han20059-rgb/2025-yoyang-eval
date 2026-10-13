@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useEvalSession } from "@/components/EvalSession";
-import { RECHECK_STORAGE } from "@/lib/checks";
+import { preserveManualRecheckPreview } from "@/lib/checks";
 import { adminRolesFor, overrideMap, type AdminOverride } from "@/lib/assignmentMerge";
 import type { RoleId } from "@/data/duties";
 
@@ -45,6 +45,7 @@ export function AssignmentProvider({ children }: { children: ReactNode }) {
   }, [mode]);
 
   useEffect(() => {
+    preserveManualRecheckPreview();
     const id = window.setTimeout(() => void reload(), 0);
     const onAdmin = () => void reload();
     window.addEventListener("yoyang-admin", onAdmin);
@@ -78,16 +79,4 @@ export function useAssignments() {
 export function saveDemoOverrides(items: AdminOverride[]) {
   sessionStorage.setItem("eval-demo-overrides", JSON.stringify(items));
   window.dispatchEvent(new Event("yoyang-admin"));
-}
-
-export function markRolesRecheck(indicatorId: number, mark: string, newRoles: RoleId[]) {
-  try {
-    const raw = JSON.parse(localStorage.getItem(RECHECK_STORAGE) || "[]") as string[];
-    const next = new Set(raw);
-    for (const r of newRoles) next.add(`${indicatorId}:${mark}:${r}`);
-    localStorage.setItem(RECHECK_STORAGE, JSON.stringify([...next]));
-    window.dispatchEvent(new Event("yoyang-progress"));
-  } catch {
-    /* ignore */
-  }
 }

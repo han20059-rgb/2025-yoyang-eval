@@ -196,8 +196,7 @@ export async function POST(req: Request) {
       const prev = await localQ("select roles, recheck_roles from eval_assignment_overrides where indicator_id=$1 and mark=$2", [ch.indicatorId, ch.mark]);
       const before = ((prev?.rows[0]?.roles as string[]) || []).filter(Boolean);
       const prevRecheck = ((prev?.rows[0]?.recheck_roles as string[]) || []).filter(Boolean);
-      const added = after.filter((r) => !before.includes(r));
-      const recheck = [...new Set([...prevRecheck.filter((r) => after.includes(r as RoleId)), ...added])];
+      const recheck = prevRecheck.filter((r) => after.includes(r as RoleId));
       if (prev && !("error" in prev && prev.error && missingRelation(String(prev.error)))) {
         const saved = await localSaveChange(ch, after, exclude, recheck, before, actorName, actorId);
         if (saved.ok) {
@@ -245,8 +244,7 @@ export async function POST(req: Request) {
       .maybeSingle();
     const before = ((prev?.roles || []) as string[]).filter(Boolean);
     const prevRecheck = ((prev?.recheck_roles || []) as string[]).filter(Boolean);
-    const added = after.filter((r) => !before.includes(r));
-    const recheck = [...new Set([...prevRecheck.filter((r) => after.includes(r as RoleId)), ...added])];
+    const recheck = prevRecheck.filter((r) => after.includes(r as RoleId));
     const full = {
       indicator_id: ch.indicatorId,
       mark: ch.mark,

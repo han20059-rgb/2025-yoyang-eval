@@ -9,6 +9,16 @@ import type { RoleId } from "@/data/duties";
 
 export const runtime = "nodejs";
 
+const UNREADY = { error: "지시 저장 기능 준비 중", storage: "unready" as const, items: [] as EvalDirective[] };
+
+function unready() {
+  return NextResponse.json(UNREADY, { status: 503 });
+}
+
+function directiveMissing(err?: string) {
+  return /eval_directives|does not exist|42P01|42883/i.test(err || "");
+}
+
 function mapRow(row: Record<string, unknown>): EvalDirective {
   return {
     id: String(row.id),
@@ -40,11 +50,12 @@ export async function GET(req: Request) {
     const r = await localServiceQuery(
       "select id, indicator_id, mark, target_roles, target_staff_ids, target_staff_names, body, due_on, status, author_name, author_leave_record_id, notes, created_at from eval_directives order by created_at desc"
     );
-    if (!r) return NextResponse.json({ items: [], storage: "unready" }, { status: 503 });
-    const items = r.rows.map((row) => mapRow(row as Record<string, unknown>)).filter((d) =>
-      directiveVisible(d, identity.evalRole, identity.leaveRecordId, admin.ok)
-    );
-    return NextResponse.json({ items, storage: "supabase" });
+    if (r) {
+      const items = r.rows.map((row) => mapRow(row as Record<string, unknown>)).filter((d) =>
+        directiveVisible(d, identity.evalRole, identity.leaveRecordId, admin.ok)
+      );
+      return NextResponse.json({ items, storage: "supabase" });
+    }
   }
   const token = cookieToken(req);
   const rpc = evalAnon();
@@ -54,11 +65,12 @@ export async function GET(req: Request) {
       const raw = Array.isArray(data) ? data : [];
       return NextResponse.json({ items: raw.map((row) => mapRow(row as Record<string, unknown>)), storage: "supabase" });
     }
+    if (directiveMissing(error.message)) return unready();
   }
   const svc = evalService();
-  if (!svc) return NextResponse.json({ items: [], storage: "unready" }, { status: 503 });
+  if (!svc) return unready();
   const { data, error } = await svc.from("eval_directives").select("*").order("created_at", { ascending: false });
-  if (error) return NextResponse.json({ error: error.message, items: [], storage: "unready" }, { status: 503 });
+  if (error) return unready();
   const items = (data || []).map((row) => mapRow(row as Record<string, unknown>)).filter((d) =>
     directiveVisible(d, identity.evalRole, identity.leaveRecordId, admin.ok)
   );
@@ -93,7 +105,7 @@ export async function POST(req: Request) {
        values ($1,$2,$3,$4,$5,$6,$7,$8,$9) returning id`,
       [indicatorId, mark, targetRoles, targetStaffIds, targetStaffNames, text, due, actorName, actorId]
     );
-    if (!up) return NextResponse.json({ error: "저장 실패", storage: "unready" }, { status: 503 });
+    if (!up) return unready();
     return NextResponse.json({ ok: true, id: up.rows[0]?.id });
   }
   const token = cookieToken(req);
@@ -109,11 +121,11 @@ export async function POST(req: Request) {
       p_body: text,
       p_due: due,
     });
-    if (error) return NextResponse.json({ error: error.message }, { status: 503 });
+    if (error) return unready();
     return NextResponse.json({ ok: true, ...(data as object) });
   }
   const svc = evalService();
-  if (!svc) return NextResponse.json({ error: "저장 실패. 지시 테이블이 아직 없습니다.", storage: "unready" }, { status: 503 });
+  if (!svc) return unready();
   const { data, error } = await svc.from("eval_directives").insert({
     indicator_id: indicatorId,
     mark,
@@ -125,7 +137,7 @@ export async function POST(req: Request) {
     author_name: actorName,
     author_leave_record_id: actorId,
   }).select("id").maybeSingle();
-  if (error) return NextResponse.json({ error: error.message }, { status: 503 });
+  if (error) return unready();
   return NextResponse.json({ ok: true, id: data?.id });
 }
 
@@ -162,15 +174,18 @@ export async function PATCH(req: Request) {
       "update eval_directives set status=$2, notes=$3::jsonb, updated_at=now() where id=$1",
       [id, status, JSON.stringify(notes)]
     );
-    if (!up) return NextResponse.json({ error: "저장 실패" }, { status: 503 });
+    if (!up) return unready();
     return NextResponse.json({ ok: true });
   }
   const token = cookieToken(req);
   const rpc = evalAnon();
   if (rpc && token) {
     const { error } = await rpc.rpc("eval_update_directive_status", { token, p_id: id, p_status: status, p_note: note });
-    if (error) return NextResponse.json({ error: error.message }, { status: 403 });
+    if (error) {
+      if (directiveMissing(error.message)) return unready();
+      return NextResponse.json({ error: error.message }, { status: 403 });
+    }
     return NextResponse.json({ ok: true });
   }
-  return NextResponse.json({ error: "저장 실패. 지시 테이블이 아직 없습니다." }, { status: 503 });
+  return unready();
 }

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { ARCHIVE_STORAGE, RECHECK_STORAGE } from "@/lib/checks";
+import { ARCHIVE_STORAGE, MANUAL_RECHECK_PREVIEW_STORAGE, preserveManualRecheckPreview } from "@/lib/checks";
 import { adminFetch } from "@/lib/adminClient";
 
 type Edition = {
@@ -53,7 +53,9 @@ export default function ManualReviewPage() {
   }, [params.id]);
 
   useEffect(() => {
-    void load();
+    preserveManualRecheckPreview();
+    const id = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(id);
   }, [load]);
 
   async function extract() {
@@ -130,7 +132,8 @@ export default function ManualReviewPage() {
       const stack = prevArchive ? (JSON.parse(prevArchive) as unknown[]) : [];
       stack.push({ at: new Date().toISOString(), checks, recheck: data.checkPreview?.recheck || [] });
       localStorage.setItem(ARCHIVE_STORAGE, JSON.stringify(stack));
-      localStorage.setItem(RECHECK_STORAGE, JSON.stringify(data.checkPreview?.recheck || []));
+      preserveManualRecheckPreview();
+      localStorage.setItem(MANUAL_RECHECK_PREVIEW_STORAGE, JSON.stringify(data.checkPreview?.recheck || []));
       window.dispatchEvent(new Event("yoyang-progress"));
     } catch {
       /* ignore */
@@ -151,7 +154,7 @@ export default function ManualReviewPage() {
       }
       localStorage.setItem("yoyang-eval-checks-v1", JSON.stringify(last.checks));
       localStorage.setItem(ARCHIVE_STORAGE, JSON.stringify(stack));
-      localStorage.setItem(RECHECK_STORAGE, "[]");
+      localStorage.setItem(MANUAL_RECHECK_PREVIEW_STORAGE, "[]");
       window.dispatchEvent(new Event("yoyang-progress"));
     } catch {
       setBusy("");
