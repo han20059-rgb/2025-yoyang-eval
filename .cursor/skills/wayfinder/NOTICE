@@ -1,0 +1,8 @@
+Wayfinder skill
+Source: https://github.com/mattpocock/skills
+Path in upstream: skills/engineering/wayfinder/
+License: MIT (see LICENSE in this folder). Copyright (c) 2026 Matt Pocock.
+
+This repo copy may include a short overlay at the top of SKILL.md so
+issue creation, branch push, and skill install follow project rules.
+The overlay does not replace the MIT license.
