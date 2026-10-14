@@ -17,7 +17,7 @@ export async function POST(req: Request) {
   try {
     const result = await loginStaff(yymmdd, password, !!body.remember);
     if (!result.ok) return NextResponse.json({ error: result.error }, { status: 401 });
-    const admin = await isStaffAdmin(result.identity.leaveRecordId);
+    const admin = await isStaffAdmin(result.token, result.identity.leaveRecordId);
     const res = NextResponse.json({
       ok: true,
       identity: { ...result.identity, isAdmin: admin.admin },

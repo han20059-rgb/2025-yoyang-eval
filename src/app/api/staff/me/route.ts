@@ -8,7 +8,7 @@ export async function GET(req: Request) {
   try {
     const gate = await requireStaff(req);
     if (!gate.ok) return gate.res;
-    const admin = await isStaffAdmin(gate.identity.leaveRecordId);
+    const admin = await isStaffAdmin(gate.token, gate.identity.leaveRecordId);
     return NextResponse.json({
       ok: true,
       identity: { ...gate.identity, isAdmin: admin.admin },
