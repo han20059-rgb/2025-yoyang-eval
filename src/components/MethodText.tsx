@@ -1,5 +1,6 @@
 "use client";
 
+import { EvalBadges } from "@/components/EvalBadges";
 import { Highlight } from "@/components/Highlight";
 import { methodFromMatch, splitMethodText } from "@/lib/evalCriteria";
 
@@ -40,25 +41,20 @@ export function MethodText({
   );
 }
 
-export function MethodChips({ methods, pulse }: { methods: { label: string; chip: string }[]; pulse?: boolean }) {
-  if (!methods.length) return null;
-  return (
-    <span className="inline-flex max-w-full flex-wrap items-center gap-1">
-      {methods.map((m, i) => (
-        <span key={m.label} className={m.chip} style={pulse ? { animationDelay: `${i * 0.18}s` } : undefined}>
-          {m.label}
-        </span>
-      ))}
-    </span>
-  );
+export function MethodChips({ methods }: { methods: { label: string; chip: string }[]; pulse?: boolean }) {
+  return <EvalBadges methods={methods} />;
 }
 
-export function MethodHeading({ methods, isNew }: { methods: { label: string; chip: string }[]; isNew?: boolean }) {
-  if (!methods.length && !isNew) return null;
-  return (
-    <span className="inline-flex max-w-full flex-wrap items-center gap-1">
-      <MethodChips methods={methods} pulse />
-      {isNew ? <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">신설</span> : null}
-    </span>
-  );
+export function MethodHeading({
+  methods,
+  isNew,
+  isChanged,
+  delay = 0,
+}: {
+  methods: { label: string; chip: string }[];
+  isNew?: boolean;
+  isChanged?: boolean;
+  delay?: number;
+}) {
+  return <EvalBadges changeKind={isNew ? "new" : isChanged ? "changed" : null} methods={methods} delay={delay} />;
 }

@@ -1,0 +1,257 @@
+{
+  "note": "원문 PDF를 렌더해 ‘이 배포본에 해당 섹션 표기 없음’으로 확인한 기록. 같은 pdfSha12이고 지표 filePages가 겹치며 추출 텍스트가 비어 있을 때만 적용한다. 빈 섹션 전체를 일괄 해제하지 않는다.",
+  "records": [
+    {
+      "pdfFile": "official/2025-eval-manual.pdf",
+      "pdfSha12": "1e515ac43a8e",
+      "indicatorId": 4,
+      "sectionId": "law",
+      "filePages": [26, 27, 28, 29],
+      "kind": "section-absent-in-original",
+      "evidence": "원문 PDF sha12 1e515ac43a8e filePages 26-29 렌더. 29쪽이 확인방법 잔여 항목으로 끝나고 ▣ 관련근거 표기 없음."
+    },
+    {
+      "pdfFile": "official/2025-eval-manual.pdf",
+      "pdfSha12": "1e515ac43a8e",
+      "indicatorId": 8,
+      "sectionId": "law",
+      "filePages": [44, 45, 46],
+      "kind": "section-absent-in-original",
+      "evidence": "원문 PDF sha12 1e515ac43a8e filePages 44-46 렌더. 46쪽이 기준⑥ 확인방법으로 끝나고 ▣ 관련근거 표기 없음."
+    },
+    {
+      "pdfFile": "official/2025-eval-manual.pdf",
+      "pdfSha12": "1e515ac43a8e",
+      "indicatorId": 21,
+      "sectionId": "law",
+      "filePages": [105, 106],
+      "kind": "section-absent-in-original",
+      "evidence": "원문 PDF sha12 1e515ac43a8e filePages 105-106 렌더. 106쪽이 기준③ 확인방법으로 끝나고 ▣ 관련근거 표기 없음."
+    },
+    {
+      "pdfFile": "official/2025-eval-manual.pdf",
+      "pdfSha12": "1e515ac43a8e",
+      "indicatorId": 28,
+      "sectionId": "law",
+      "filePages": [135, 136],
+      "kind": "section-absent-in-original",
+      "evidence": "원문 PDF sha12 1e515ac43a8e filePages 135-136 렌더. 136쪽이 기준② 확인방법으로 끝나고 ▣ 관련근거 표기 없음."
+    },
+    {
+      "pdfFile": "official/2025-eval-manual.pdf",
+      "pdfSha12": "1e515ac43a8e",
+      "indicatorId": 34,
+      "sectionId": "law",
+      "filePages": [150, 151],
+      "kind": "section-absent-in-original",
+      "evidence": "원문 PDF sha12 1e515ac43a8e filePages 150-151 렌더. 151쪽이 예시 표로 끝나고 ▣ 관련근거 표기 없음."
+    },
+    {
+      "pdfFile": "official/2025-eval-manual.pdf",
+      "pdfSha12": "1e515ac43a8e",
+      "indicatorId": 36,
+      "sectionId": "law",
+      "filePages": [154],
+      "kind": "section-absent-in-original",
+      "evidence": "원문 PDF sha12 1e515ac43a8e filePage 154 렌더. 확인방법 다음에 ▣ 관련근거 표기 없음."
+    },
+    {
+      "pdfFile": "official/2025-eval-manual.pdf",
+      "pdfSha12": "1e515ac43a8e",
+      "indicatorId": 37,
+      "sectionId": "law",
+      "filePages": [155, 156],
+      "kind": "section-absent-in-original",
+      "evidence": "원문 PDF sha12 1e515ac43a8e filePages 155-156 렌더. 156쪽이 확인방법으로 끝나고 ▣ 관련근거 표기 없음."
+    },
+    {
+      "pdfFile": "official/2025-eval-manual.pdf",
+      "pdfSha12": "1e515ac43a8e",
+      "indicatorId": 38,
+      "sectionId": "law",
+      "filePages": [157, 158],
+      "kind": "section-absent-in-original",
+      "evidence": "원문 PDF sha12 1e515ac43a8e filePages 157-158 렌더. 158쪽이 확인방법으로 끝나고 ▣ 관련근거 표기 없음."
+    },
+    {
+      "pdfFile": "official/2025-eval-manual.pdf",
+      "pdfSha12": "1e515ac43a8e",
+      "indicatorId": 40,
+      "sectionId": "law",
+      "filePages": [163, 164],
+      "kind": "section-absent-in-original",
+      "evidence": "원문 PDF sha12 1e515ac43a8e filePages 163-164 렌더. 164쪽이 기준③ 확인방법으로 끝나고 ▣ 관련근거 표기 없음."
+    },
+    {
+      "pdfFile": "official/2025-eval-manual.pdf",
+      "pdfSha12": "1e515ac43a8e",
+      "indicatorId": 41,
+      "sectionId": "law",
+      "filePages": [165, 166],
+      "kind": "section-absent-in-original",
+      "evidence": "원문 PDF sha12 1e515ac43a8e filePages 165-166 렌더. 166쪽이 확인방법으로 끝나고 ▣ 관련근거 표기 없음."
+    },
+    {
+      "pdfFile": "official/2025-eval-manual.pdf",
+      "pdfSha12": "1e515ac43a8e",
+      "indicatorId": 42,
+      "sectionId": "law",
+      "filePages": [167],
+      "kind": "section-absent-in-original",
+      "evidence": "원문 PDF sha12 1e515ac43a8e filePage 167 렌더. 확인방법으로 끝나고 ▣ 관련근거 표기 없음."
+    },
+    {
+      "pdfFile": "official/2025-eval-manual.pdf",
+      "pdfSha12": "1e515ac43a8e",
+      "indicatorId": 45,
+      "sectionId": "law",
+      "filePages": [173],
+      "kind": "section-absent-in-original",
+      "evidence": "원문 PDF sha12 1e515ac43a8e filePage 173 렌더. 확인방법으로 끝나고 ▣ 관련근거 표기 없음."
+    },
+    {
+      "pdfFile": "official/2025-eval-manual.pdf",
+      "pdfSha12": "1e515ac43a8e",
+      "indicatorId": 45,
+      "sectionId": "periodDefault",
+      "filePages": [173],
+      "kind": "section-absent-in-original",
+      "evidence": "원문 PDF sha12 1e515ac43a8e filePage 173 렌더. ▣ 지표적용기간 표기 없음. 확인방법만 있음."
+    },
+    {
+      "pdfFile": "official/2025-eval-manual.pdf",
+      "pdfSha12": "1e515ac43a8e",
+      "indicatorId": 45,
+      "sectionId": "periodByCriterion",
+      "filePages": [173],
+      "kind": "section-absent-in-original",
+      "evidence": "원문 PDF sha12 1e515ac43a8e filePage 173 렌더. 기준별 적용기간 표기 없음."
+    },
+    {
+      "pdfFile": "official/2025-eval-manual.pdf",
+      "pdfSha12": "1e515ac43a8e",
+      "indicatorId": 1,
+      "sectionId": "exceptions",
+      "filePages": [17, 18],
+      "kind": "section-absent-in-original",
+      "evidence": "원문 추출에 별도 예외 표기 없음. 판정·주의는 확인방법·주의사항에 있음. 확인방법 문장을 예외로 옮기지 않음."
+    },
+    {
+      "pdfFile": "official/2025-eval-manual.pdf",
+      "pdfSha12": "1e515ac43a8e",
+      "indicatorId": 2,
+      "sectionId": "exceptions",
+      "filePages": [19, 20],
+      "kind": "section-absent-in-original",
+      "evidence": "원문 추출에 별도 예외 표기 없음. 판정·주의는 확인방법·주의사항에 있음."
+    },
+    {
+      "pdfFile": "official/2025-eval-manual.pdf",
+      "pdfSha12": "1e515ac43a8e",
+      "indicatorId": 3,
+      "sectionId": "exceptions",
+      "filePages": [21, 22, 23, 24, 25],
+      "kind": "section-absent-in-original",
+      "evidence": "원문 추출에 별도 예외 표기 없음. 판정·주의는 확인방법·주의사항에 있음."
+    },
+    {
+      "pdfFile": "official/2025-eval-manual.pdf",
+      "pdfSha12": "1e515ac43a8e",
+      "indicatorId": 7,
+      "sectionId": "exceptions",
+      "filePages": [41, 42, 43],
+      "kind": "section-absent-in-original",
+      "evidence": "원문 추출에 별도 예외 표기 없음. 판정·주의는 확인방법·주의사항에 있음."
+    },
+    {
+      "pdfFile": "official/2025-eval-manual.pdf",
+      "pdfSha12": "1e515ac43a8e",
+      "indicatorId": 12,
+      "sectionId": "exceptions",
+      "filePages": [65, 66, 67, 68, 69, 70, 71],
+      "kind": "section-absent-in-original",
+      "evidence": "원문 추출에 별도 예외 표기 없음. 판정·주의는 확인방법·주의사항에 있음."
+    },
+    {
+      "pdfFile": "official/2025-eval-manual.pdf",
+      "pdfSha12": "1e515ac43a8e",
+      "indicatorId": 16,
+      "sectionId": "exceptions",
+      "filePages": [84, 85],
+      "kind": "section-absent-in-original",
+      "evidence": "원문 추출에 별도 예외 표기 없음. 판정·주의는 확인방법·주의사항에 있음."
+    },
+    {
+      "pdfFile": "official/2025-eval-manual.pdf",
+      "pdfSha12": "1e515ac43a8e",
+      "indicatorId": 17,
+      "sectionId": "exceptions",
+      "filePages": [86, 87, 88, 89],
+      "kind": "section-absent-in-original",
+      "evidence": "원문 추출에 별도 예외 표기 없음. 판정·주의는 확인방법·주의사항에 있음."
+    },
+    {
+      "pdfFile": "official/2025-eval-manual.pdf",
+      "pdfSha12": "1e515ac43a8e",
+      "indicatorId": 20,
+      "sectionId": "exceptions",
+      "filePages": [102, 103, 104],
+      "kind": "section-absent-in-original",
+      "evidence": "원문 추출에 별도 예외 표기 없음. 판정·주의는 확인방법·주의사항에 있음."
+    },
+    {
+      "pdfFile": "official/2025-eval-manual.pdf",
+      "pdfSha12": "1e515ac43a8e",
+      "indicatorId": 34,
+      "sectionId": "exceptions",
+      "filePages": [150, 151],
+      "kind": "section-absent-in-original",
+      "evidence": "원문 추출에 별도 예외 표기 없음. 판정·주의는 확인방법·주의사항에 있음."
+    },
+    {
+      "pdfFile": "official/2025-eval-manual.pdf",
+      "pdfSha12": "1e515ac43a8e",
+      "indicatorId": 35,
+      "sectionId": "exceptions",
+      "filePages": [152, 153],
+      "kind": "section-absent-in-original",
+      "evidence": "원문 추출에 별도 예외 표기 없음. 판정·주의는 확인방법·주의사항에 있음."
+    },
+    {
+      "pdfFile": "official/2025-eval-manual.pdf",
+      "pdfSha12": "1e515ac43a8e",
+      "indicatorId": 39,
+      "sectionId": "exceptions",
+      "filePages": [159, 160, 161, 162],
+      "kind": "section-absent-in-original",
+      "evidence": "원문 추출에 별도 예외 표기 없음. 판정·주의는 확인방법·주의사항에 있음."
+    },
+    {
+      "pdfFile": "official/2025-eval-manual.pdf",
+      "pdfSha12": "1e515ac43a8e",
+      "indicatorId": 42,
+      "sectionId": "exceptions",
+      "filePages": [167],
+      "kind": "section-absent-in-original",
+      "evidence": "원문 추출에 별도 예외 표기 없음. 판정·주의는 확인방법·주의사항에 있음."
+    },
+    {
+      "pdfFile": "official/2025-eval-manual.pdf",
+      "pdfSha12": "1e515ac43a8e",
+      "indicatorId": 43,
+      "sectionId": "exceptions",
+      "filePages": [168, 169],
+      "kind": "section-absent-in-original",
+      "evidence": "원문 추출에 별도 예외 표기 없음. 판정·주의는 확인방법·주의사항에 있음."
+    },
+    {
+      "pdfFile": "official/2025-eval-manual.pdf",
+      "pdfSha12": "1e515ac43a8e",
+      "indicatorId": 44,
+      "sectionId": "exceptions",
+      "filePages": [170, 171, 172],
+      "kind": "section-absent-in-original",
+      "evidence": "원문 추출에 별도 예외 표기 없음. 판정·주의는 확인방법·주의사항에 있음."
+    }
+  ]
+}

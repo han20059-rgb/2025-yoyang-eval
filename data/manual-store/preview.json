@@ -44,7 +44,7 @@
         "methodNote": {
           "id": "methodNote",
           "title": "평가방법",
-          "text": "① 전산, 현장",
+          "text": "① 기록, 현장, 전산",
           "source": "original",
           "filePages": [
             17,
@@ -136,8 +136,7 @@
             18
           ],
           "printedPages": [],
-          "needsReview": true,
-          "reviewReason": "예외조건을 이 배포본에서 구분하지 못했습니다. 확인 필요"
+          "needsReview": false
         },
         "law": {
           "id": "law",
@@ -177,12 +176,13 @@
       "criteriaItems": [
         {
           "mark": "①",
-          "text": "내용이 충실한 운영규정을 직원이 열람 가능한 장소에 비치하고 있다. [노인복지법 시행규칙 제22조 제2항 운영규정] 기록,\n∙ 조직·인사·급여·회계·물품 규정\n∙ 입소정원 및 모집방법 등에 관한 사항\n∙ 입소계약에 관한 사항(계약기간, 계약목적, 월이용료 기타 비용부담액,\n신원인수인의 권리·의무, 계약의 해제 등에 관한 사항을 포함한다)\n※ 신원인수인이란 보호자 또는 보증인을 의미함\n∙ 이용료 등 비용에 대한 변경방법 및 절차 등에 관한 사항\n∙ 서비스의 내용과 그 비용의 부담에 관한 사항\n∙ 특별한 보호를 필요로 하는 경우에는 그 서비스기준과 비용에 관한 사항\n∙ 의료를 필요로 하는 경우에는 그 구체적인 처리절차\n∙ 시설물 사용상의 주의사항 등에 관한 사항\n∙ 서비스 제공자의 배상책임·면책범위에 관한 사항\n∙ 운영규정의 개정방법 및 절차 등에 관한 사항\n∙ 운영위원회의 설치·운영에 관한 사항",
+          "text": "내용이 충실한 운영규정을 직원이 열람 가능한 장소에 비치하고 있다. [노인복지법 시행규칙 제22조 제2항 운영규정]\n∙ 조직·인사·급여·회계·물품 규정\n∙ 입소정원 및 모집방법 등에 관한 사항\n∙ 입소계약에 관한 사항(계약기간, 계약목적, 월이용료 기타 비용부담액,\n신원인수인의 권리·의무, 계약의 해제 등에 관한 사항을 포함한다)\n※ 신원인수인이란 보호자 또는 보증인을 의미함\n∙ 이용료 등 비용에 대한 변경방법 및 절차 등에 관한 사항\n∙ 서비스의 내용과 그 비용의 부담에 관한 사항\n∙ 특별한 보호를 필요로 하는 경우에는 그 서비스기준과 비용에 관한 사항\n∙ 의료를 필요로 하는 경우에는 그 구체적인 처리절차\n∙ 시설물 사용상의 주의사항 등에 관한 사항\n∙ 서비스 제공자의 배상책임·면책범위에 관한 사항\n∙ 운영규정의 개정방법 및 절차 등에 관한 사항\n∙ 운영위원회의 설치·운영에 관한 사항",
           "confirm": "",
           "period": "",
           "methods": [
-            "전산",
-            "현장"
+            "기록",
+            "현장",
+            "전산"
           ]
         }
       ],
@@ -327,8 +327,7 @@
             20
           ],
           "printedPages": [],
-          "needsReview": true,
-          "reviewReason": "예외조건을 이 배포본에서 구분하지 못했습니다. 확인 필요"
+          "needsReview": false
         },
         "law": {
           "id": "law",
@@ -563,8 +562,7 @@
             25
           ],
           "printedPages": [],
-          "needsReview": true,
-          "reviewReason": "예외조건을 이 배포본에서 구분하지 못했습니다. 확인 필요"
+          "needsReview": false
         },
         "law": {
           "id": "law",
@@ -829,8 +827,8 @@
             29
           ],
           "printedPages": [],
-          "needsReview": true,
-          "reviewReason": "관련근거을 이 배포본에서 구분하지 못했습니다. 확인 필요"
+          "needsReview": false,
+          "reviewReason": "원문 PDF filePages 26-29 렌더 확인. 확인방법으로 끝나고 ▣ 관련근거 표기 없음."
         },
         "tablesImages": {
           "id": "tablesImages",
@@ -1593,8 +1591,7 @@
             43
           ],
           "printedPages": [],
-          "needsReview": true,
-          "reviewReason": "예외조건을 이 배포본에서 구분하지 못했습니다. 확인 필요"
+          "needsReview": false
         },
         "law": {
           "id": "law",
@@ -1838,8 +1835,8 @@
             46
           ],
           "printedPages": [],
-          "needsReview": true,
-          "reviewReason": "관련근거을 이 배포본에서 구분하지 못했습니다. 확인 필요"
+          "needsReview": false,
+          "reviewReason": "원문 PDF filePages 44-46 렌더 확인. 기준⑥ 확인방법으로 끝나고 ▣ 관련근거 표기 없음."
         },
         "tablesImages": {
           "id": "tablesImages",
@@ -2997,8 +2994,7 @@
             71
           ],
           "printedPages": [],
-          "needsReview": true,
-          "reviewReason": "예외조건을 이 배포본에서 구분하지 못했습니다. 확인 필요"
+          "needsReview": false
         },
         "law": {
           "id": "law",
@@ -3952,8 +3948,7 @@
             85
           ],
           "printedPages": [],
-          "needsReview": true,
-          "reviewReason": "예외조건을 이 배포본에서 구분하지 못했습니다. 확인 필요"
+          "needsReview": false
         },
         "law": {
           "id": "law",
@@ -4175,8 +4170,7 @@
             89
           ],
           "printedPages": [],
-          "needsReview": true,
-          "reviewReason": "예외조건을 이 배포본에서 구분하지 못했습니다. 확인 필요"
+          "needsReview": false
         },
         "law": {
           "id": "law",
@@ -4944,8 +4938,7 @@
             104
           ],
           "printedPages": [],
-          "needsReview": true,
-          "reviewReason": "예외조건을 이 배포본에서 구분하지 못했습니다. 확인 필요"
+          "needsReview": false
         },
         "law": {
           "id": "law",
@@ -5165,8 +5158,8 @@
             106
           ],
           "printedPages": [],
-          "needsReview": true,
-          "reviewReason": "관련근거을 이 배포본에서 구분하지 못했습니다. 확인 필요"
+          "needsReview": false,
+          "reviewReason": "원문 PDF filePages 105-106 렌더 확인. 기준③ 확인방법으로 끝나고 ▣ 관련근거 표기 없음."
         },
         "tablesImages": {
           "id": "tablesImages",
@@ -6826,8 +6819,8 @@
             136
           ],
           "printedPages": [],
-          "needsReview": true,
-          "reviewReason": "관련근거을 이 배포본에서 구분하지 못했습니다. 확인 필요"
+          "needsReview": false,
+          "reviewReason": "원문 PDF filePages 135-136 렌더 확인. 기준② 확인방법으로 끝나고 ▣ 관련근거 표기 없음."
         },
         "tablesImages": {
           "id": "tablesImages",
@@ -8111,8 +8104,7 @@
             151
           ],
           "printedPages": [],
-          "needsReview": true,
-          "reviewReason": "예외조건을 이 배포본에서 구분하지 못했습니다. 확인 필요"
+          "needsReview": false
         },
         "law": {
           "id": "law",
@@ -8124,8 +8116,8 @@
             151
           ],
           "printedPages": [],
-          "needsReview": true,
-          "reviewReason": "관련근거을 이 배포본에서 구분하지 못했습니다. 확인 필요"
+          "needsReview": false,
+          "reviewReason": "원문 PDF filePages 150-151 렌더 확인. 예시 표로 끝나고 ▣ 관련근거 표기 없음."
         },
         "tablesImages": {
           "id": "tablesImages",
@@ -8188,9 +8180,7 @@
         152,
         153
       ],
-      "printedPages": [
-        2
-      ],
+      "printedPages": [],
       "imagePages": [],
       "sections": {
         "direction": {
@@ -8331,8 +8321,7 @@
           "printedPages": [
             2
           ],
-          "needsReview": true,
-          "reviewReason": "예외조건을 이 배포본에서 구분하지 못했습니다. 확인 필요"
+          "needsReview": false
         },
         "law": {
           "id": "law",
@@ -8524,14 +8513,13 @@
         "exceptions": {
           "id": "exceptions",
           "title": "예외조건",
-          "text": "",
+          "text": "※ 기관에 관절구축 유지 정도를 평가할 수 있는 수급자가 없거나 표본이 부족한 경우 ‘해당없음’\n으로 평가하고 ‘관절구축 예방’ 지표 점수를 제외한 총점을 100점으로 환산한다.\n- 신규 입소 등으로 욕구사정 2회 미만 수급자는 표본에서 제외함\n- 관절구축 정도를 관리할 수 없는 진행성 질환(근위축성측삭경화증 등)이 있거나, 입소이후 뇌졸중\n발병 등 질병으로 관절제한이 발생한 경우 관련 자료를 현장에서 확인하여 표본에서 제외함",
           "source": "original",
           "filePages": [
             154
           ],
           "printedPages": [],
-          "needsReview": true,
-          "reviewReason": "예외조건을 이 배포본에서 구분하지 못했습니다. 확인 필요"
+          "needsReview": false
         },
         "law": {
           "id": "law",
@@ -8542,8 +8530,8 @@
             154
           ],
           "printedPages": [],
-          "needsReview": true,
-          "reviewReason": "관련근거을 이 배포본에서 구분하지 못했습니다. 확인 필요"
+          "needsReview": false,
+          "reviewReason": "원문 PDF filePage 154 렌더 확인. 확인방법 다음에 ▣ 관련근거 표기 없음."
         },
         "tablesImages": {
           "id": "tablesImages",
@@ -8722,8 +8710,8 @@
             156
           ],
           "printedPages": [],
-          "needsReview": true,
-          "reviewReason": "관련근거을 이 배포본에서 구분하지 못했습니다. 확인 필요"
+          "needsReview": false,
+          "reviewReason": "원문 PDF filePages 155-156 렌더 확인. 확인방법으로 끝나고 ▣ 관련근거 표기 없음."
         },
         "tablesImages": {
           "id": "tablesImages",
@@ -8913,8 +8901,8 @@
             158
           ],
           "printedPages": [],
-          "needsReview": true,
-          "reviewReason": "관련근거을 이 배포본에서 구분하지 못했습니다. 확인 필요"
+          "needsReview": false,
+          "reviewReason": "원문 PDF filePages 157-158 렌더 확인. 확인방법으로 끝나고 ▣ 관련근거 표기 없음."
         },
         "tablesImages": {
           "id": "tablesImages",
@@ -9112,8 +9100,7 @@
             162
           ],
           "printedPages": [],
-          "needsReview": true,
-          "reviewReason": "예외조건을 이 배포본에서 구분하지 못했습니다. 확인 필요"
+          "needsReview": false
         },
         "law": {
           "id": "law",
@@ -9336,8 +9323,8 @@
             164
           ],
           "printedPages": [],
-          "needsReview": true,
-          "reviewReason": "관련근거을 이 배포본에서 구분하지 못했습니다. 확인 필요"
+          "needsReview": false,
+          "reviewReason": "원문 PDF filePages 163-164 렌더 확인. 기준③ 확인방법으로 끝나고 ▣ 관련근거 표기 없음."
         },
         "tablesImages": {
           "id": "tablesImages",
@@ -9538,8 +9525,8 @@
             166
           ],
           "printedPages": [],
-          "needsReview": true,
-          "reviewReason": "관련근거을 이 배포본에서 구분하지 못했습니다. 확인 필요"
+          "needsReview": false,
+          "reviewReason": "원문 PDF filePages 165-166 렌더 확인. 확인방법으로 끝나고 ▣ 관련근거 표기 없음."
         },
         "tablesImages": {
           "id": "tablesImages",
@@ -9706,8 +9693,7 @@
             167
           ],
           "printedPages": [],
-          "needsReview": true,
-          "reviewReason": "예외조건을 이 배포본에서 구분하지 못했습니다. 확인 필요"
+          "needsReview": false
         },
         "law": {
           "id": "law",
@@ -9718,8 +9704,8 @@
             167
           ],
           "printedPages": [],
-          "needsReview": true,
-          "reviewReason": "관련근거을 이 배포본에서 구분하지 못했습니다. 확인 필요"
+          "needsReview": false,
+          "reviewReason": "원문 PDF filePage 167 렌더 확인. 확인방법으로 끝나고 ▣ 관련근거 표기 없음."
         },
         "tablesImages": {
           "id": "tablesImages",
@@ -9887,8 +9873,7 @@
             169
           ],
           "printedPages": [],
-          "needsReview": true,
-          "reviewReason": "예외조건을 이 배포본에서 구분하지 못했습니다. 확인 필요"
+          "needsReview": false
         },
         "law": {
           "id": "law",
@@ -10085,8 +10070,7 @@
             172
           ],
           "printedPages": [],
-          "needsReview": true,
-          "reviewReason": "예외조건을 이 배포본에서 구분하지 못했습니다. 확인 필요"
+          "needsReview": false
         },
         "law": {
           "id": "law",
@@ -10239,8 +10223,8 @@
             173
           ],
           "printedPages": [],
-          "needsReview": true,
-          "reviewReason": "기본 적용기간을 이 배포본에서 구분하지 못했습니다. 확인 필요"
+          "needsReview": false,
+          "reviewReason": "원문 PDF filePage 173 렌더 확인. ▣ 지표적용기간 표기 없음. 확인방법만 있음."
         },
         "periodByCriterion": {
           "id": "periodByCriterion",
@@ -10251,8 +10235,8 @@
             173
           ],
           "printedPages": [],
-          "needsReview": true,
-          "reviewReason": "기준별 적용기간을 이 배포본에서 구분하지 못했습니다. 확인 필요"
+          "needsReview": false,
+          "reviewReason": "원문 PDF filePage 173 렌더 확인. ▣ 지표적용기간 표기 없음. 확인방법만 있음."
         },
         "confirm": {
           "id": "confirm",
@@ -10290,14 +10274,13 @@
         "exceptions": {
           "id": "exceptions",
           "title": "예외조건",
-          "text": "",
+          "text": "※ 기관에 만족도 조사가 가능한 수급자 또는 보호자가 없는 기관은 ‘해당없음’으로 평가하여\n‘서비스 만족도 조사(유선)’ 지표 점수를 제외한 총점을 100점으로 환산한다.",
           "source": "original",
           "filePages": [
             173
           ],
           "printedPages": [],
-          "needsReview": true,
-          "reviewReason": "예외조건을 이 배포본에서 구분하지 못했습니다. 확인 필요"
+          "needsReview": false
         },
         "law": {
           "id": "law",
@@ -10308,8 +10291,8 @@
             173
           ],
           "printedPages": [],
-          "needsReview": true,
-          "reviewReason": "관련근거을 이 배포본에서 구분하지 못했습니다. 확인 필요"
+          "needsReview": false,
+          "reviewReason": "원문 PDF filePage 173 렌더 확인. 확인방법으로 끝나고 ▣ 관련근거 표기 없음."
         },
         "tablesImages": {
           "id": "tablesImages",

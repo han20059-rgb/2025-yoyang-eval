@@ -5,7 +5,9 @@ import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointer
 import { useSearchParams } from "next/navigation";
 import { ManualText, extractPurpose, splitScoring } from "@/components/Highlight";
 import { CriteriaChecklist } from "@/components/CriteriaChecklist";
+import { EvalBadges } from "@/components/EvalBadges";
 import { MethodChips, MethodText } from "@/components/MethodText";
+import { badgeDelay, indicatorEvalMeta } from "@/lib/evalBadges";
 import { ProgressCounts } from "@/components/ProgressBoard";
 import { useProgress } from "@/components/ProgressProvider";
 import { parseEvalCriteria, uniqueMethods } from "@/lib/evalCriteria";
@@ -68,7 +70,9 @@ function SidePanel({
 }) {
   const { goal, purpose } = extractPurpose(side.intro);
   const scoring = splitScoring(side.criteria);
-  const methodKinds = uniqueMethods(parseEvalCriteria(side.criteria).flatMap((c) => c.methods));
+  const methodKinds = currIndicator
+    ? indicatorEvalMeta(currIndicator).methods
+    : uniqueMethods(parseEvalCriteria(side.criteria).flatMap((c) => c.methods));
 
   return (
     <div className="min-w-0 space-y-3">
@@ -83,7 +87,7 @@ function SidePanel({
         <Section
           kicker="이 지표가 보려는 것"
           title="평가방향"
-          aside={emphasizeMethods ? <MethodChips methods={methodKinds} pulse /> : null}
+          aside={emphasizeMethods ? <MethodChips methods={methodKinds} /> : null}
         >
           {goal ? (
             <p className="mb-2 font-medium text-stone-900">
@@ -164,7 +168,7 @@ export function IndicatorView({
   const qs = q ? `?q=${encodeURIComponent(q)}` : "";
   const pdfRange = pdfRangeFor(indicator, catalog);
   const pdfHref = originalRangeHref(indicator, catalog);
-  const headerMethods = uniqueMethods(parseEvalCriteria(indicator.curr.criteria).flatMap((c) => c.methods));
+  const headerMeta = indicatorEvalMeta(indicator);
 
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 768px)");
@@ -265,22 +269,17 @@ export function IndicatorView({
           {indicator.area} · {indicator.sub}
         </p>
         <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <h2 className="text-2xl font-bold">
+          <h2 className="min-w-0 text-2xl font-bold">
             지표 {indicator.id} · {indicator.name}
           </h2>
-          <span className="text-3xl font-bold tracking-tight text-(--teal)">{indicator.score}점</span>
-          {indicator.isNew ? (
-            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">신설</span>
-          ) : null}
+          <span className="shrink-0 text-3xl font-bold tracking-tight text-(--teal)">{indicator.score}점</span>
           {prep.total > 0 ? (
             <ProgressCounts done={prep.done} left={prep.left} complete={prep.complete} />
           ) : null}
         </div>
-        {headerMethods.length ? (
-          <div className="mt-2">
-            <MethodChips methods={headerMethods} pulse />
-          </div>
-        ) : null}
+        <div className="mt-2 min-w-0">
+          <EvalBadges changeKind={headerMeta.changeKind} methods={headerMeta.methods} delay={badgeDelay(indicator.id)} />
+        </div>
       </header>
 
       {compare ? null : <LinkedWorkflows indicatorId={indicator.id} names={new Map(catalog.map((c) => [c.id, c.name]))} />}

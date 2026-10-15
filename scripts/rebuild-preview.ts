@@ -1,4 +1,5 @@
 import { readFile, writeFile } from "fs/promises";
+import { applyConfirmedAbsences, loadConfirmedAbsences } from "../src/lib/extract/confirmedAbsences.ts";
 import { auditAgainstBundle, parseIndicatorsFromPages } from "../src/lib/extract/parseIndicators.ts";
 import type { PageExtract } from "../src/lib/extract/types.ts";
 
@@ -30,6 +31,8 @@ async function main() {
     }
   }
   const fulls = parseIndicatorsFromPages(pages);
+  const absences = await loadConfirmedAbsences();
+  applyConfirmedAbsences(fulls, absences.records, preview.pdfSha12 || "");
   const bundle = JSON.parse(await readFile("src/data/manual.json", "utf8")) as {
     indicators: { id: number; name: string; curr: { criteria: string; method: string; law: string; period: string; text: string } }[];
   };

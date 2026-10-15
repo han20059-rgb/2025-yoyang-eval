@@ -40,6 +40,7 @@ export type IndicatorFull = {
     period: string;
     methods: string[];
     isNew?: boolean;
+    isChanged?: boolean;
     methodScope?: "criterion" | "indicator-common";
   }[];
   commonMethods?: string[];
@@ -130,20 +131,20 @@ function isBulletLine(line: string) {
 function peelLineMeta(line: string): { prose: string; methods: string[]; isNew: boolean } {
   const isNew = /(^|\s)신설(\s|$)/.test(line);
   const t = line
-    .replace(/\s*신설\s*/g, " ")
+    .replace(/(^|\s)신설(\s|$)/g, "$1$2")
     .replace(/한(현장|면담|기록|전산|시연|유선)/g, "한 $1")
     .replace(/(기록|전산|면담|시연|유선|현장)\.(?=\s*(?:기록|전산|면담|시연|유선|현장))/g, "$1,")
     .replace(/\s+/g, " ")
     .trim()
     .replace(/[,，]+$/, "")
     .trim();
-  const tail = t.match(new RegExp(`^(.*?)\\s+(${METHOD_RUN})$`));
-  if (tail && tail[1].trim()) {
-    return { prose: tail[1].trim(), methods: tail[2].split(/[,，]\s*/).map((s) => s.trim()).filter(Boolean), isNew };
-  }
   if (new RegExp(`^(${METHOD_RUN})$`).test(t) || /^2\s*1\s*0$/.test(t)) {
     const methods = /^2\s*1\s*0$/.test(t) ? [] : t.split(/[,，]\s*/).map((s) => s.trim()).filter(Boolean);
     return { prose: "", methods, isNew };
+  }
+  const tail = t.match(new RegExp(`^(.*?)\\s+(${METHOD_RUN})$`));
+  if (tail && tail[1].trim() && !new RegExp(`^(${METHOD_RUN})$`).test(t)) {
+    return { prose: tail[1].trim(), methods: tail[2].split(/[,，]\s*/).map((s) => s.trim()).filter(Boolean), isNew };
   }
   return { prose: t, methods: [], isNew };
 }

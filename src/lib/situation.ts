@@ -1,6 +1,7 @@
 import { roles, type RoleId } from "@/data/duties";
 import { combinedRoles, type AdminOverride, type CombinedRole } from "@/lib/assignmentMerge";
-import { checkKey, confirmSlice, criteriaFromIndicator, rolesForCriterion, staffCheckKey } from "@/lib/evalCriteria";
+import { indicatorEvalMeta } from "@/lib/evalBadges";
+import { checkKey, confirmSlice, criteriaFromIndicator, rolesForCriterion, staffCheckKey, type ChangeKind, type MethodDef } from "@/lib/evalCriteria";
 import type { Checks } from "@/lib/checks";
 import type { Indicator } from "@/lib/types";
 
@@ -119,6 +120,8 @@ export type SitIndicatorCard = {
   recheck: boolean;
   assignees: string[];
   rows: SitRow[];
+  changeKind: ChangeKind | null;
+  methods: MethodDef[];
 };
 
 function uniqueAssignees(list: SitRow[]) {
@@ -162,6 +165,7 @@ export function buildSitIndicatorCards(rows: SitRow[], indicators: Indicator[]):
     const doneMarks = list.filter((r) => r.done).length;
     const totalMarks = list.length;
     const status: SitPrepStatus = doneMarks === totalMarks && totalMarks > 0 ? "done" : doneMarks > 0 ? "progress" : "open";
+    const meta = indicatorEvalMeta(ind);
     cards.push({
       id: ind.id,
       name: ind.name,
@@ -173,6 +177,8 @@ export function buildSitIndicatorCards(rows: SitRow[], indicators: Indicator[]):
       recheck: list.some((r) => r.recheck),
       assignees: uniqueAssignees(list),
       rows: list,
+      changeKind: meta.changeKind,
+      methods: meta.methods,
     });
   }
   return cards.sort((a, b) => a.id - b.id);

@@ -42,27 +42,67 @@ mark {
   border-radius: 0.2em;
 }
 
-@keyframes method-glow {
+@keyframes eval-badge-bob {
   0%,
   100% {
     transform: translateY(0);
-    box-shadow: 0 0 0 0 rgb(0 0 0 / 0);
   }
   50% {
-    transform: translateY(-1px);
-    box-shadow: 0 0 0 3px rgb(0 0 0 / 0.06);
+    transform: translateY(-2px);
   }
 }
 
+.eval-badge-row {
+  display: inline-flex;
+  max-width: 100%;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.28rem;
+}
+
+.eval-badge,
 .method-chip {
   display: inline-flex;
   align-items: center;
   border-radius: 999px;
-  padding: 0.12rem 0.55rem;
-  font-size: 0.7rem;
+  border: 1px solid transparent;
+  padding: 0.14rem 0.55rem;
+  font-size: 0.75rem;
   font-weight: 700;
+  line-height: 1.25;
   letter-spacing: -0.02em;
-  animation: method-glow 2.4s ease-in-out infinite;
+  white-space: nowrap;
+}
+
+.eval-badge-new,
+.eval-badge-partial-new {
+  background: #ffe4e6;
+  color: #9f1239;
+  border-color: #fecdd3;
+}
+
+.eval-badge-changed {
+  background: #ffedd5;
+  color: #9a3412;
+  border-color: #fed7aa;
+}
+
+.eval-badge-bob {
+  animation: eval-badge-bob 3.6s ease-in-out infinite;
+  animation-delay: var(--badge-delay, 0s);
+}
+
+.method-chip {
+  transition: transform 0.22s ease;
+}
+
+.method-chip:hover,
+.method-chip:focus-visible,
+a:hover .method-chip,
+a:focus-visible .method-chip {
+  transform: translateY(-2px);
+  outline: none;
 }
 
 .method-word {
@@ -74,37 +114,50 @@ mark {
 }
 
 .method-inspect {
-  background: #ccfbf1;
-  color: #0f766e;
+  background: #d1fae5;
+  color: #065f46;
+  border-color: #a7f3d0;
 }
 .method-site {
-  background: #d1fae5;
-  color: #047857;
+  background: #ccfbf1;
+  color: #0f766e;
+  border-color: #99f6e4;
 }
 .method-interview {
   background: #ede9fe;
-  color: #6d28d9;
+  color: #5b21b6;
+  border-color: #ddd6fe;
 }
 .method-record {
-  background: #e0f2fe;
-  color: #0369a1;
+  background: #f5e6d3;
+  color: #7c4a1e;
+  border-color: #e7d3b8;
 }
 .method-system {
-  background: #fef3c7;
-  color: #b45309;
+  background: #e0e7ff;
+  color: #1e3a8a;
+  border-color: #c7d2fe;
 }
 .method-demo {
-  background: #ffe4e6;
-  color: #be123c;
+  background: #dbeafe;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
 }
 .method-phone {
-  background: #ffedd5;
-  color: #c2410c;
+  background: #fef9c3;
+  color: #854d0e;
+  border-color: #fde68a;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .method-chip {
+  .eval-badge-bob {
     animation: none;
+  }
+  .method-chip,
+  .method-chip:hover,
+  .method-chip:focus-visible {
+    transition: none;
+    transform: none;
   }
 }
 

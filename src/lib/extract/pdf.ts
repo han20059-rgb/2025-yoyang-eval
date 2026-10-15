@@ -162,7 +162,7 @@ export async function extractPdf(buf: Buffer, fileName: string): Promise<FileExt
     const reviewReasons: string[] = [];
     let ocrUsed = false;
     let text = fullText;
-    let ocrLeft = leftText;
+    const ocrLeft = leftText;
     let ocrRight = rightText;
 
     if (hasImage) {
@@ -276,7 +276,6 @@ async function storePdfPageImage(page: number, png: Buffer) {
 
 export async function saveSelectedPdfPageImages(buf: Buffer, pagesWanted: number[]) {
   const want = new Set(pagesWanted);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const pdf = await getDocument({ data: new Uint8Array(buf), disableWorker: true } as never).promise;
   const saved: string[] = [];
   for (const i of [...want].sort((a, b) => a - b)) {

@@ -6,8 +6,9 @@ import { useStaffDirectory } from "@/components/useStaffDirectory";
 import { ScoringCriteria } from "@/components/ScoringCriteria";
 import { LawAccordion, OriginalProse, ZoomBox } from "@/components/OriginalProse";
 import { useEvalSession } from "@/components/EvalSession";
-import { MethodChips, MethodHeading } from "@/components/MethodText";
-import { extractMethods, peelOriginalMethods, uniqueMethods } from "@/lib/evalCriteria";
+import { MethodHeading } from "@/components/MethodText";
+import { badgeDelay } from "@/lib/evalBadges";
+import { criterionFromSource, uniqueMethods } from "@/lib/evalCriteria";
 import type { RoleId } from "@/data/duties";
 import type { Indicator } from "@/lib/types";
 import type { IndicatorFullSource } from "@/lib/types";
@@ -65,29 +66,23 @@ export function IndicatorSourcePanel({
           { leaveRecordId: 103, name: "박요양", jobType: "요양보호사" },
         ]
       : staffDirState.items;
+  const criteria = (full.criteriaItems || []).map((it) => criterionFromSource(it));
   const methodNote =
     full.commonMethodNote ||
     (full.criteriaItems || [])
-      .map((it) => {
-        const peeled = peelOriginalMethods(it.text);
-        const methods = it.methods?.length ? extractMethods(it.methods.join(" ")) : peeled.methods;
-        if (it.methodScope === "indicator-common") return "";
-        return methods.length ? `${it.mark} ${methods.map((m) => m.label).join(", ")}` : "";
+      .map((raw, i) => {
+        const it = criteria[i];
+        if (raw.methodScope === "indicator-common") return "";
+        return it.methods.length ? `${it.mark} ${it.methods.map((m) => m.label).join(", ")}` : "";
       })
       .filter(Boolean)
       .join("\n");
-  const directionMethods = uniqueMethods([
-    ...extractMethods((full.commonMethods || []).join(" ")),
-    ...full.criteriaItems.flatMap((it) => {
-      const peeled = peelOriginalMethods(it.text);
-      return it.methods?.length ? extractMethods(it.methods.join(" ")) : peeled.methods;
-    }),
-  ]);
+  const directionMethods = uniqueMethods(criteria.flatMap((it) => it.methods));
   return (
     <div id="source" className="space-y-3 scroll-mt-4">
       <Block
         title="평가방향"
-        aside={<MethodChips methods={directionMethods} pulse />}
+        aside={<MethodHeading methods={directionMethods} />}
         text={full.sections.direction.text}
         myRole={myRole}
         mineOnly={false}
@@ -97,37 +92,35 @@ export function IndicatorSourcePanel({
         <p className="mt-1 text-[13px] text-stone-500">책자 원문입니다. 확인방식은 원문에 적힌 것만 옆에 둡니다.</p>
         <div className="mt-3 space-y-3">
           {full.criteriaItems.length ? (
-            full.criteriaItems.map((it) => {
-              const peeled = peelOriginalMethods(it.text);
-              const methods = it.methods?.length ? extractMethods(it.methods.join(" ")) : peeled.methods;
-              const isNew = Boolean(it.isNew) || peeled.isNew;
+            full.criteriaItems.map((raw, i) => {
+              const it = criteria[i];
               return (
               <article
                 key={it.mark}
                 id={indicator ? `crit-${indicator.id}-${it.mark}` : undefined}
                 className={`scroll-mt-4 rounded-xl border p-3 ${focusMark === it.mark ? "ring-2 ring-teal-600" : "border-stone-200"}`}
               >
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
                   <p className="text-[16px] font-semibold">{it.mark}</p>
-                  <MethodHeading methods={methods} isNew={isNew} />
+                  <MethodHeading methods={it.methods} isNew={it.isNew} isChanged={it.isChanged} delay={badgeDelay((indicator?.id || 0) * 10 + i)} />
                 </div>
-                {peeled.body ? <OriginalProse text={peeled.body} myRole={myRole} mineOnly={false} /> : null}
-                {it.period ? (
+                {it.text ? <OriginalProse text={it.text} myRole={myRole} mineOnly={false} /> : null}
+                {raw.period ? (
                   <p className="mt-2 text-[14px] text-stone-600">
-                    이 기준 적용기간: {it.period}
+                    이 기준 적용기간: {raw.period}
                   </p>
                 ) : null}
-                {it.confirm.trim() ? (
+                {raw.confirm.trim() ? (
                 <div className="mt-2 rounded-lg bg-stone-50 p-2">
                   <p className="text-[13px] font-semibold text-stone-500">확인방법</p>
-                  <OriginalProse text={it.confirm} myRole={myRole} mineOnly={false} />
+                  <OriginalProse text={raw.confirm} myRole={myRole} mineOnly={false} />
                 </div>
                 ) : null}
                 {indicator ? (
                   <CriterionWork
                     indicator={indicator}
                     mark={it.mark}
-                    originalText={it.text}
+                    originalText={raw.text}
                     staffDir={staffDir}
                     staffDirError={mode === "demo" ? "" : staffDirState.error}
                     staffDirLoading={mode === "demo" ? false : staffDirState.loading}

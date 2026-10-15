@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Highlight } from "@/components/Highlight";
 import { searchIndicators } from "@/lib/search";
@@ -13,9 +13,11 @@ export function SearchResults({ indicators }: { indicators: Indicator[] }) {
   const q = params.get("q") ?? "";
   const hits = useMemo(() => searchIndicators(indicators, q), [indicators, q]);
   const [index, setIndex] = useState(0);
-  useEffect(() => {
+  const [indexForQ, setIndexForQ] = useState(q);
+  if (indexForQ !== q) {
+    setIndexForQ(q);
     setIndex(0);
-  }, [q]);
+  }
   const current = hits[Math.min(index, Math.max(0, hits.length - 1))];
   const full = current ? indicators.find((i) => i.id === current.id) : null;
 

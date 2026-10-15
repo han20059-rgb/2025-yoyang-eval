@@ -1,9 +1,13 @@
 import { createHash } from "crypto";
 import { readFile, writeFile } from "fs/promises";
 import { extractManualFile } from "../src/lib/extract/index.ts";
+import { applyConfirmedAbsences, loadConfirmedAbsences } from "../src/lib/extract/confirmedAbsences.ts";
 import { parseIndicatorsFromPages } from "../src/lib/extract/parseIndicators.ts";
 
 async function main() {
+  const outArg = process.argv.find((a) => a.startsWith("--out="));
+  const outPath = outArg ? outArg.slice("--out=".length) : "data/manual-store/preview.json";
+  const shaOverride = process.argv.find((a) => a.startsWith("--sha="))?.slice("--sha=".length);
   const prev = JSON.parse(await readFile("data/manual-store/preview.json", "utf8")) as {
     editionLabel?: string;
     indicators: { id: number; imageOcr?: { page: number; text: string; ok: boolean; error?: string }[] }[];
@@ -13,6 +17,7 @@ async function main() {
     for (const o of ind.imageOcr || []) ocrByPage.set(o.page, o);
   }
   const pdfBuf = await readFile("data/manual-store/official/2025-eval-manual.pdf");
+  const pdfSha12 = shaOverride || createHash("sha256").update(pdfBuf).digest("hex").slice(0, 12);
   const pdf = await extractManualFile(pdfBuf, "2025-eval-manual.pdf");
   const fulls = parseIndicatorsFromPages(pdf.pages);
   for (const f of fulls) {
@@ -23,22 +28,20 @@ async function main() {
       f.reviewReasons.push("이미지 쪽은 OCR과 원본을 함께 두었습니다. 판독이 비면 확인 필요를 유지합니다.");
     }
   }
-  await writeFile(
-    "data/manual-store/preview.json",
-    JSON.stringify(
-      {
-        localPreview: true,
-        exposeToStaff: false,
-        editionLabel: prev.editionLabel || "첨부 2025 평가매뉴얼 PDF 로컬 미리보기",
-        pdfFile: "official/2025-eval-manual.pdf",
-        pdfSha12: createHash("sha256").update(pdfBuf).digest("hex").slice(0, 12),
-        pageCount: pdf.pageCount,
-        indicators: fulls,
-      },
-      null,
-      2
-    )
-  );
+  const absences = await loadConfirmedAbsences();
+  const applied = applyConfirmedAbsences(fulls, absences.records, pdfSha12);
+  const payload = {
+    localPreview: true,
+    exposeToStaff: false,
+    editionLabel: prev.editionLabel || "첨부 2025 평가매뉴얼 PDF 로컬 미리보기",
+    pdfFile: "official/2025-eval-manual.pdf",
+    pdfSha12,
+    pageCount: pdf.pageCount,
+    confirmedAbsences: applied,
+    indicators: fulls,
+  };
+  await writeFile(outPath, JSON.stringify(payload, null, 2));
+  console.log(JSON.stringify({ outPath, pdfSha12, applied }, null, 2));
   const of = (id: number) => fulls.find((f) => f.id === id);
   console.log(
     JSON.stringify(

@@ -1,8 +1,8 @@
 "use client";
 
 import { EmphText } from "@/components/EmphText";
-import { MethodChips } from "@/components/MethodText";
-import type { MethodDef } from "@/lib/evalCriteria";
+import { EvalBadges } from "@/components/EvalBadges";
+import type { ChangeKind, MethodDef } from "@/lib/evalCriteria";
 import type { PracticeBand, PracticeCard } from "@/lib/practiceGuide";
 import type { ReactNode } from "react";
 
@@ -68,7 +68,8 @@ export function CriterionCard({
   mark,
   title,
   methods,
-  pulse,
+  changeKind,
+  delay = 0,
   focused,
   scores,
   bands,
@@ -78,6 +79,8 @@ export function CriterionCard({
   mark: string;
   title: string;
   methods: MethodDef[];
+  changeKind?: ChangeKind | null;
+  delay?: number;
   pulse?: boolean;
   focused?: boolean;
   scores: { score: string; condition: string; groupMarks: string; joint: boolean; notes?: string[] }[];
@@ -87,10 +90,10 @@ export function CriterionCard({
 }) {
   return (
     <article className={`rounded-lg border border-stone-200 bg-white p-2.5 shadow-sm ${focused ? "ring-2 ring-teal-600" : ""}`}>
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
         <p className="text-[13px] font-bold text-stone-500">기준 {mark}</p>
-        <h3 className="text-[18px] font-bold leading-7 text-stone-950">{title}</h3>
-        <MethodChips methods={methods} pulse={pulse} />
+        <h3 className="min-w-0 text-[18px] font-bold leading-7 text-stone-950">{title}</h3>
+        <EvalBadges changeKind={changeKind} methods={methods} delay={delay} />
       </div>
       <ScoreConditions rows={scores} />
       {bands?.length ? <PracticeBands bands={bands} /> : null}

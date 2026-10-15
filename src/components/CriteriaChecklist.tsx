@@ -7,7 +7,8 @@ import { useEvalSession } from "@/components/EvalSession";
 import { useProgress } from "@/components/ProgressProvider";
 import { combinedRoles } from "@/lib/assignmentMerge";
 import { roles, type RoleId } from "@/data/duties";
-import { confirmSlice, criterionEvidence, parseEvalCriteria, roleShort, rolesForCriterion } from "@/lib/evalCriteria";
+import { badgeDelay } from "@/lib/evalBadges";
+import { confirmSlice, criteriaFromIndicator, criterionEvidence, roleShort, rolesForCriterion } from "@/lib/evalCriteria";
 import type { Indicator } from "@/lib/types";
 
 function ProgressBar({ done, total }: { done: number; total: number }) {
@@ -65,7 +66,7 @@ export function CriteriaChecklist({
   const { isChecked, needsRecheck, toggle, statsFor, viewRole, recentEvents } = useProgress();
   const { mode, identity } = useEvalSession();
   const { adminRoles, map } = useAssignments();
-  const items = parseEvalCriteria(indicator.curr.criteria);
+  const items = criteriaFromIndicator(indicator);
   const method = `${indicator.curr.method}\n${indicator.fullSource?.sections.confirm.text || ""}`;
   const unassigned = items.filter((it) => {
     const confirm = confirmSlice(method, it.mark);
@@ -131,7 +132,7 @@ export function CriteriaChecklist({
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
                 <span className="text-lg font-bold text-(--teal)">{it.mark}</span>
-                <MethodHeading methods={it.methods} isNew={it.isNew} />
+                <MethodHeading methods={it.methods} isNew={it.isNew} isChanged={it.isChanged} delay={badgeDelay(indicator.id * 10 + it.mark.charCodeAt(0))} />
                 {needsRecheck(indicator.id, it.mark) ? (
                   <span className="rounded-full bg-amber-100 px-2 py-1 text-xs text-amber-900">재확인 필요</span>
                 ) : null}

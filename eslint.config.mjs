@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Mozilla pdf.js worker copy used by OriginalPdfPane (public/pdf.worker.min.mjs).
+    "public/pdf.worker.min.mjs",
   ]),
 ]);
 

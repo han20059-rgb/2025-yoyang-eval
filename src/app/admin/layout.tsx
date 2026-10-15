@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { adminFetch } from "@/lib/adminClient";
 import { useEvalSession } from "@/components/EvalSession";
@@ -21,7 +22,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   useEffect(() => {
-    void check();
+    const timer = window.setTimeout(() => {
+      void check();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [mode, identity?.leaveRecordId]);
 
   if (mode === "demo" && pathname.startsWith("/admin/ai-review")) {
@@ -72,10 +76,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         관리자 {identity?.name} (직원 ID {identity?.leaveRecordId}). 여기서 읽은 내용은 기존 직원용 매뉴얼·준비 체크를 덮어쓰지 않습니다.
       </p>
       <nav className="flex flex-col gap-1.5">
-        <a href="/admin/manuals" className="inline-flex min-h-11 items-center rounded-xl border bg-white px-3">매뉴얼 등록</a>
-        <a href="/admin/assignments" className="inline-flex min-h-11 items-center rounded-xl border bg-white px-3">담당 배정 관리</a>
-        <a href="/admin/admins" className="inline-flex min-h-11 items-center rounded-xl border bg-white px-3">관리자 관리</a>
-        <a href="/admin/ai-review" className="inline-flex min-h-11 items-center rounded-xl border bg-white px-3">AI 연결 검토</a>
+        <Link href="/admin/manuals" className="inline-flex min-h-11 items-center rounded-xl border bg-white px-3">매뉴얼 등록</Link>
+        <Link href="/admin/assignments" className="inline-flex min-h-11 items-center rounded-xl border bg-white px-3">담당 배정 관리</Link>
+        <Link href="/admin/admins" className="inline-flex min-h-11 items-center rounded-xl border bg-white px-3">관리자 관리</Link>
+        <Link href="/admin/ai-review" className="inline-flex min-h-11 items-center rounded-xl border bg-white px-3">AI 연결 검토</Link>
         <button type="button" className="min-h-11 rounded-xl border px-3 text-left" onClick={() => void onLogout()}>
           로그아웃
         </button>

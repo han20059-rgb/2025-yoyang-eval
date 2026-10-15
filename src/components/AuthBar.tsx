@@ -1,8 +1,9 @@
 "use client";
 
-import { FormEvent, useState, useSyncExternalStore } from "react";
+import { FormEvent, useState } from "react";
 import { useEvalSession } from "@/components/EvalSession";
 import { roles } from "@/data/duties";
+import { useClientReady } from "@/lib/useClientReady";
 
 export function AuthBar() {
   const { mode, identity, startDemo, exitDemo, setDemoAdmin, refresh } = useEvalSession();
@@ -11,11 +12,7 @@ export function AuthBar() {
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(false);
-  const sessionReady = useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false
-  );
+  const sessionReady = useClientReady();
 
   if (!sessionReady) {
     return (

@@ -16,25 +16,31 @@ export function DutyBoard({ indicators }: { indicators: Indicator[] }) {
   const [open, setOpen] = useState<string | null>(null);
 
   useEffect(() => {
-    const raw = sessionStorage.getItem("eval-duty-ui");
-    if (!raw) return;
-    try {
-      const s = JSON.parse(raw) as { period?: PeriodId; open?: string; scroll?: number; viewRole?: string };
-      if (s.period) setPeriod(s.period);
-      if (s.open) setOpen(s.open);
-      if (s.viewRole) setViewRole(s.viewRole as typeof viewRole);
-      if (s.scroll) window.scrollTo(0, s.scroll);
-    } catch {
-      /* ignore */
-    }
-  }, []);
+    const timer = window.setTimeout(() => {
+      const raw = sessionStorage.getItem("eval-duty-ui");
+      if (!raw) return;
+      try {
+        const s = JSON.parse(raw) as { period?: PeriodId; open?: string; scroll?: number; viewRole?: string };
+        if (s.period) setPeriod(s.period);
+        if (s.open) setOpen(s.open);
+        if (s.viewRole) setViewRole(s.viewRole as typeof viewRole);
+        if (s.scroll) window.scrollTo(0, s.scroll);
+      } catch {
+        /* ignore */
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [setViewRole]);
 
   useEffect(() => {
     sessionStorage.setItem("eval-duty-ui", JSON.stringify({ period, open, scroll: window.scrollY, viewRole }));
   }, [period, open, viewRole]);
 
   useEffect(() => {
-    if (identity?.evalRole && viewRole === "all" && mode !== "anon") setViewRole(identity.evalRole);
+    const role = identity?.evalRole;
+    if (!(role && viewRole === "all" && mode !== "anon")) return;
+    const timer = window.setTimeout(() => setViewRole(role), 0);
+    return () => window.clearTimeout(timer);
   }, [identity, mode, setViewRole, viewRole]);
 
   const role = viewRole;

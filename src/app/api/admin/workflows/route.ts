@@ -52,7 +52,7 @@ export async function POST(req: Request) {
     reason?: string;
     patch?: Record<string, unknown>;
   };
-  let state = await stateNow();
+  const state = await stateNow();
   const actor = gate.identity.name;
   let result: { state: typeof state; error?: string } = { state };
   if (body.action === "apply") result = applyProposal(state, String(body.proposalId || ""), actor, body.patch, body.reason || "");

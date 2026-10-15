@@ -7,7 +7,8 @@ import { ScoringCriteria } from "@/components/ScoringCriteria";
 import { LawAccordion, OriginalProse } from "@/components/OriginalProse";
 import { useEvalSession } from "@/components/EvalSession";
 import { useStaffDirectory } from "@/components/useStaffDirectory";
-import { extractMethods, peelOriginalMethods, uniqueMethods } from "@/lib/evalCriteria";
+import { badgeDelay } from "@/lib/evalBadges";
+import { changeKindForCriterion, criterionFromSource, criteriaFromIndicator } from "@/lib/evalCriteria";
 import { originalRangeHref, pdfRangeFor } from "@/lib/indicatorPdfRange";
 import { originalPracticeCard } from "@/lib/originalCards";
 import { scoresForMark } from "@/lib/parseScoring";
@@ -40,13 +41,7 @@ export function IndicatorWorkerView({
   const range = pdfRangeFor(indicator, catalog);
   const href = originalRangeHref(indicator, catalog);
   const scoring = full?.sections.scoring.text || "";
-  const methods = uniqueMethods([
-    ...extractMethods((full?.commonMethods || []).join(" ")),
-    ...(full?.criteriaItems || []).flatMap((it) => {
-      const peeled = peelOriginalMethods(it.text);
-      return it.methods?.length ? extractMethods(it.methods.join(" ")) : peeled.methods;
-    }),
-  ]);
+  const criteria = criteriaFromIndicator(indicator);
 
   function work(mark: string, originalText: string) {
     return (
@@ -84,16 +79,15 @@ export function IndicatorWorkerView({
             </p>
           </div>
           {guide.cards.map((card, i) => {
-            const it = full?.criteriaItems.find((c) => c.mark === card.mark);
-            const peeled = peelOriginalMethods(it?.text || "");
-            const itemMethods = it?.methods?.length ? extractMethods(it.methods.join(" ")) : peeled.methods;
+            const it = criteria.find((c) => c.mark === card.mark);
             return (
               <div key={card.mark} id={`crit-${indicator.id}-${card.mark}`} className="scroll-mt-4">
                 <CriterionCard
                   mark={card.mark}
                   title={card.title}
-                  methods={i === 0 ? methods : itemMethods}
-                  pulse={i === 0}
+                  methods={it?.methods || []}
+                  changeKind={it ? changeKindForCriterion(it) : null}
+                  delay={badgeDelay(indicator.id * 10 + i)}
                   focused={focusMark === card.mark}
                   scores={scoresForMark(scoring, card.mark)}
                   bands={card.bands}
@@ -107,23 +101,23 @@ export function IndicatorWorkerView({
         </section>
       ) : (
         <ol className="space-y-2">
-          {(full?.criteriaItems || []).map((it) => {
-            const peeled = peelOriginalMethods(it.text);
-            const itemMethods = it.methods?.length ? extractMethods(it.methods.join(" ")) : peeled.methods;
-            const card = originalPracticeCard(indicator, it);
+          {(full?.criteriaItems || []).map((raw, i) => {
+            const it = criterionFromSource(raw);
+            const card = originalPracticeCard(indicator, raw);
             return (
               <li key={it.mark} id={`crit-${indicator.id}-${it.mark}`} className="scroll-mt-4">
                 <CriterionCard
                   mark={it.mark}
                   title={card.title}
-                  methods={itemMethods}
-                  pulse
+                  methods={it.methods}
+                  changeKind={changeKindForCriterion(it)}
+                  delay={badgeDelay(indicator.id * 10 + i)}
                   focused={focusMark === it.mark}
                   scores={scoresForMark(scoring, it.mark)}
                   bands={card.bands}
                   details={card.details}
                 >
-                  {work(it.mark, it.text)}
+                  {work(it.mark, raw.text)}
                 </CriterionCard>
               </li>
             );

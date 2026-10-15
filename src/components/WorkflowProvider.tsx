@@ -76,12 +76,17 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
   }, [mode, identity?.isAdmin]);
 
   useEffect(() => {
-    void reload();
+    const timer = window.setTimeout(() => {
+      void reload();
+    }, 0);
     const on = () => {
       if (sessionStorage.getItem("eval-demo") === "1") setState(readDemo());
     };
     window.addEventListener(WORKFLOW_EVENT, on);
-    return () => window.removeEventListener(WORKFLOW_EVENT, on);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener(WORKFLOW_EVENT, on);
+    };
   }, [reload]);
 
   const decide = useCallback(

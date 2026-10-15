@@ -29,7 +29,10 @@ export default function AdminManualsPage() {
   }
 
   useEffect(() => {
-    void refresh();
+    const timer = window.setTimeout(() => {
+      void refresh();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   async function onCreate(e: FormEvent<HTMLFormElement>) {

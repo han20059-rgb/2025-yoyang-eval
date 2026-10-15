@@ -8,6 +8,7 @@ import { mergeChecks, checksEqual, type Checks } from "@/lib/checks";
 import { combinedRoles } from "@/lib/assignmentMerge";
 import { parseStaffTags } from "@/lib/situation";
 import { checkKey, confirmSlice, criteriaFromIndicator, rolesForCriterion } from "@/lib/evalCriteria";
+import { useClientReady } from "@/lib/useClientReady";
 import { getSupabase } from "@/lib/supabase";
 import type { Indicator } from "@/lib/types";
 
@@ -171,11 +172,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [saveMessage, setSaveMessage] = useState("");
   const [recentEvents, setRecentEvents] = useState<PrepEvent[]>([]);
-  const clientReady = useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false
-  );
+  const clientReady = useClientReady();
   const checksRawLive = useSyncExternalStore(subscribe, snapshot, () => "{}");
   const demoChecksRawLive = useSyncExternalStore(demoSubscribe, demoSnapshot, () => "{}");
   const roleRawLive = useSyncExternalStore(subscribe, roleSnapshot, () => "all");

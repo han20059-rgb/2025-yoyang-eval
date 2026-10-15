@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { FormEvent, useState, useSyncExternalStore } from "react";
+import { FormEvent, useState } from "react";
 import { AuthBar } from "@/components/AuthBar";
 import { useEvalSession } from "@/components/EvalSession";
+import { useClientReady } from "@/lib/useClientReady";
 
 const baseNav = [
   { href: "/", label: "상황판" },
@@ -17,11 +18,7 @@ export function Header() {
   const pathname = usePathname();
   const { identity, mode } = useEvalSession();
   const [q, setQ] = useState("");
-  const sessionReady = useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false
-  );
+  const sessionReady = useClientReady();
   const nav =
     sessionReady && identity?.isAdmin
       ? [
@@ -53,10 +50,10 @@ export function Header() {
     <header id="site-header" className="relative z-20 border-b border-(--line) bg-(--paper)">
       <div className="mx-auto flex max-w-6xl flex-col gap-1 px-3 py-1 sm:px-4">
         <div className="flex items-center justify-between gap-2">
-          <a href="/" className="min-w-0 shrink">
+          <Link href="/" className="min-w-0 shrink">
             <p className="text-[10px] leading-none tracking-wide text-(--teal)">2025 시설급여</p>
             <span className="block text-[14px] font-semibold leading-tight sm:text-[15px]">노인요양시설 평가</span>
-          </a>
+          </Link>
           <div className="header-aux min-w-0">
             <AuthBar />
           </div>

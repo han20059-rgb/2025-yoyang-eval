@@ -49,57 +49,88 @@ export function uniqueMethods(list: MethodDef[]): MethodDef[] {
   return METHODS.filter((m) => found.has(m.id));
 }
 
+function stripFlagWords(raw: string) {
+  return raw
+    .replace(/(^|\s)신설(\s|$)/g, "$1$2")
+    .replace(/(^|\s)변경(\s|$)/g, "$1$2")
+    .replace(/[,，.]+$/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function methodLabelsIn(raw: string): string[] {
-  const t = raw.replace(/\s*신설\s*/g, " ").replace(/[,，.]+$/, "").replace(/\s+/g, " ").trim();
+  const t = stripFlagWords(raw);
   if (!new RegExp(`^(${METHOD_RUN})$`).test(t)) return [];
   return t.split(/[,，]\s*/).map((s) => s.trim()).filter(Boolean);
 }
 
-export function peelOriginalMethods(text: string): { body: string; labels: string[]; methods: MethodDef[]; isNew: boolean } {
+function lineFlags(raw: string): { isNew: boolean; isChanged: boolean } {
+  const stripped = stripFlagWords(raw);
+  const methodOrEmpty = !stripped || new RegExp(`^(${METHOD_RUN})$`).test(stripped);
+  return {
+    isNew: methodOrEmpty && /(^|\s)신설(\s|$)/.test(raw),
+    isChanged: methodOrEmpty && /(^|\s)변경(\s|$)/.test(raw) && !/변경방법/.test(raw),
+  };
+}
+
+export function peelOriginalMethods(text: string): { body: string; labels: string[]; methods: MethodDef[]; isNew: boolean; isChanged: boolean } {
   const cleaned = text.replace(/^평가기준(?:\s*평가방법)?\s*\n?/, "");
   const lines = cleaned.split("\n");
-  if (!lines[0]) return { body: cleaned.trim(), labels: [], methods: [], isNew: false };
+  if (!lines[0]) return { body: cleaned.trim(), labels: [], methods: [], isNew: false, isChanged: false };
   const labels: string[] = [];
   let isNew = false;
-  while (lines.length) {
-    const raw = lines[0].trim();
+  let isChanged = false;
+  const kept: string[] = [];
+  for (const line of lines) {
+    const raw = line.trim();
     if (!raw) {
-      lines.shift();
+      kept.push(line);
       continue;
     }
-    if (/(^|\s)신설(\s|$)/.test(raw)) isNew = true;
+    const flags = lineFlags(raw);
     const only = methodLabelsIn(raw);
-    if (only.length && !raw.replace(/\s*신설\s*/g, " ").replace(/[,，.]+$/g, "").replace(/\s+/g, " ").trim().length) {
+    if (only.length && stripFlagWords(raw) && new RegExp(`^(${METHOD_RUN})$`).test(stripFlagWords(raw))) {
       labels.push(...only);
-      lines.shift();
-      continue;
-    }
-    if (only.length && new RegExp(`^(${METHOD_RUN})[,.，]?$`).test(raw.replace(/\s*신설\s*/g, " ").trim())) {
-      labels.push(...only);
-      lines.shift();
+      isNew = isNew || flags.isNew;
+      isChanged = isChanged || flags.isChanged;
       continue;
     }
     if (/^신설$/.test(raw)) {
-      lines.shift();
+      isNew = true;
       continue;
     }
-    const first = raw.replace(/\s*신설\s*/g, " ").replace(/\s+/g, " ").trim();
-    const tail = first.match(new RegExp(`^(.*?)\\s+(${METHOD_RUN})$`));
-    const onlyRun = first.match(new RegExp(`^(${METHOD_RUN})$`));
-    if (tail && tail[1].trim()) {
-      labels.push(...tail[2].split(/[,，]\s*/).map((s) => s.trim()).filter(Boolean));
-      lines[0] = tail[1].trim();
-      break;
+    if (/^변경$/.test(raw)) {
+      isChanged = true;
+      continue;
     }
+    kept.push(line);
+  }
+  while (kept.length) {
+    const raw = kept[0].trim();
+    if (!raw) {
+      kept.shift();
+      continue;
+    }
+    const flags = lineFlags(raw);
+    isNew = isNew || flags.isNew;
+    isChanged = isChanged || flags.isChanged;
+    const first = stripFlagWords(raw);
+    const onlyRun = first.match(new RegExp(`^(${METHOD_RUN})$`));
     if (onlyRun) {
       labels.push(...onlyRun[1].split(/[,，]\s*/).map((s) => s.trim()).filter(Boolean));
-      lines.shift();
+      kept.shift();
       continue;
     }
-    lines[0] = first;
+    const tail = first.match(new RegExp(`^(.*?)\\s+(${METHOD_RUN})$`));
+    if (tail && tail[1].trim() && !new RegExp(`^(${METHOD_RUN})$`).test(first)) {
+      labels.push(...tail[2].split(/[,，]\s*/).map((s) => s.trim()).filter(Boolean));
+      kept[0] = tail[1].trim();
+      break;
+    }
+    kept[0] = first;
     break;
   }
-  let body = lines.join("\n").trim();
+  let body = kept.join("\n").trim();
   const lifted = body.replace(/(^|[\s(（])(기록|전산|면담|시연|유선|현장)[,，.](?=\s*(?:[‧·∙ㆍ(（]|[가-힣]))/g, (_m, pre: string, method: string) => {
     labels.push(method);
     return pre === "(" || pre === "（" ? pre : " ";
@@ -128,7 +159,7 @@ export function peelOriginalMethods(text: string): { body: string; labels: strin
     body = rest.join("\n").trim();
   }
   body = body.replace(/\s*신설\s*$/g, "").trim();
-  return { body, labels, methods: extractMethods(labels.join(" ")), isNew };
+  return { body, labels, methods: extractMethods(labels.join(" ")), isNew, isChanged };
 }
 
 export function staffCheckKey(indicatorId: number, mark: string, staffId: number) {
@@ -139,12 +170,45 @@ export function isStaffCheckRole(role: string) {
   return /^s\d+$/.test(role);
 }
 
+export type ChangeKind = "new" | "partial-new" | "changed";
+
 export type EvalCriterion = {
   mark: string;
   text: string;
   methods: MethodDef[];
   isNew?: boolean;
+  isChanged?: boolean;
 };
+
+export function changeKindForIndicator(indicatorIsNew: boolean, items: EvalCriterion[]): ChangeKind | null {
+  if (indicatorIsNew) return "new";
+  if (items.some((c) => c.isNew)) return "partial-new";
+  if (items.some((c) => c.isChanged)) return "changed";
+  return null;
+}
+
+export function changeKindForCriterion(item: Pick<EvalCriterion, "isNew" | "isChanged">): ChangeKind | null {
+  if (item.isNew) return "new";
+  if (item.isChanged) return "changed";
+  return null;
+}
+
+export function criterionFromSource(it: {
+  mark: string;
+  text: string;
+  methods?: string[];
+  isNew?: boolean;
+  isChanged?: boolean;
+}): EvalCriterion {
+  const peeled = peelOriginalMethods(it.text);
+  return {
+    mark: it.mark,
+    text: peeled.body,
+    methods: uniqueMethods([...(it.methods?.length ? extractMethods(it.methods.join(" ")) : []), ...peeled.methods]),
+    isNew: Boolean(it.isNew) || peeled.isNew,
+    isChanged: Boolean(it.isChanged) || peeled.isChanged,
+  };
+}
 
 const MARK_RE = /^([①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮])\s*([\s\S]*)/;
 
@@ -167,10 +231,16 @@ export function parseEvalCriteria(criteria: string): EvalCriterion[] {
     if (/^(기준\s*점수|채점기준|척도)/.test(peeled.body)) continue;
     if (seen.has(mark)) continue;
     seen.add(mark);
-    out.push({ mark, text: peeled.body, methods: peeled.methods.length ? peeled.methods : extractMethods(chunk), isNew: peeled.isNew });
+    out.push({
+      mark,
+      text: peeled.body,
+      methods: peeled.methods.length ? peeled.methods : extractMethods(chunk),
+      isNew: peeled.isNew,
+      isChanged: peeled.isChanged,
+    });
   }
   if (out.length === 0 && body.trim()) {
-    out.push({ mark: "①", text: body, methods: extractMethods(body), isNew: false });
+    out.push({ mark: "①", text: body, methods: extractMethods(body), isNew: false, isChanged: false });
   }
   return out;
 }
@@ -270,20 +340,12 @@ export function paragraphIsMine(text: string, myRole: RoleId | null | undefined)
 export function criteriaFromIndicator(i: {
   curr: { criteria: string };
   fullSource?: {
-    criteriaItems?: { mark: string; text: string; methods?: string[]; isNew?: boolean; methodScope?: "criterion" | "indicator-common" }[];
+    criteriaItems?: { mark: string; text: string; methods?: string[]; isNew?: boolean; isChanged?: boolean; methodScope?: "criterion" | "indicator-common" }[];
     commonMethods?: string[];
   } | null;
 }): EvalCriterion[] {
   if (i.fullSource?.criteriaItems?.length) {
-    return i.fullSource.criteriaItems.map((it) => {
-      const peeled = peelOriginalMethods(it.text);
-      return {
-        mark: it.mark,
-        text: peeled.body,
-        methods: it.methods?.length ? extractMethods(it.methods.join(" ")) : peeled.methods,
-        isNew: Boolean(it.isNew) || peeled.isNew,
-      };
-    });
+    return i.fullSource.criteriaItems.map((it) => criterionFromSource(it));
   }
   return parseEvalCriteria(i.curr.criteria);
 }

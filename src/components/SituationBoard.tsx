@@ -1,11 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useClientReady } from "@/lib/useClientReady";
 import { useAssignments } from "@/components/AssignmentProvider";
 import { useEvalSession } from "@/components/EvalSession";
 import { useProgress } from "@/components/ProgressProvider";
 import { useStaffDirectory } from "@/components/useStaffDirectory";
+import { EvalBadges } from "@/components/EvalBadges";
+import { badgeDelay } from "@/lib/evalBadges";
 import {
   assigneeGroups,
   assigneePreview,
@@ -51,6 +54,9 @@ function IndicatorSitCard({ card }: { card: SitIndicatorCard }) {
         </h3>
         <span className="shrink-0 text-[13px] font-semibold text-stone-700">원문 {card.score}점</span>
       </div>
+      <div className="mt-1 min-w-0">
+        <EvalBadges changeKind={card.changeKind} methods={card.methods} delay={badgeDelay(card.id)} />
+      </div>
       <p className={`mt-1 text-[13px] font-semibold leading-5 ${st.text}`}>
         {st.label}
         <span className="ml-1 font-medium text-stone-700">
@@ -70,11 +76,7 @@ export function SituationBoard({ indicators }: { indicators: Indicator[] }) {
   const { mode, identity } = useEvalSession();
   const { map } = useAssignments();
   const { checks, needsRecheck, saveStatus, saveMessage } = useProgress();
-  const sessionReady = useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false
-  );
+  const sessionReady = useClientReady();
   const isAdmin = Boolean(sessionReady && identity?.isAdmin);
   const [view, setView] = useState<"indicator" | "assignee">("indicator");
   const [filter, setFilter] = useState<BoardFilter>("all");
