@@ -7,7 +7,6 @@ import { ScoringCriteria } from "@/components/ScoringCriteria";
 import { LawAccordion, OriginalProse } from "@/components/OriginalProse";
 import { useEvalSession } from "@/components/EvalSession";
 import { useStaffDirectory } from "@/components/useStaffDirectory";
-import { badgeDelay } from "@/lib/evalBadges";
 import { changeKindForCriterion, criterionFromSource, criteriaFromIndicator } from "@/lib/evalCriteria";
 import { originalRangeHref, pdfRangeFor } from "@/lib/indicatorPdfRange";
 import { originalPracticeCard } from "@/lib/originalCards";
@@ -78,7 +77,7 @@ export function IndicatorWorkerView({
               {guide.aiGenerated ? " · AI 생성" : ""}
             </p>
           </div>
-          {guide.cards.map((card, i) => {
+          {guide.cards.map((card) => {
             const it = criteria.find((c) => c.mark === card.mark);
             return (
               <div key={card.mark} id={`crit-${indicator.id}-${card.mark}`} className="scroll-mt-4">
@@ -87,7 +86,6 @@ export function IndicatorWorkerView({
                   title={card.title}
                   methods={it?.methods || []}
                   changeKind={it ? changeKindForCriterion(it) : null}
-                  delay={badgeDelay(indicator.id * 10 + i)}
                   focused={focusMark === card.mark}
                   scores={scoresForMark(scoring, card.mark)}
                   bands={card.bands}
@@ -101,7 +99,7 @@ export function IndicatorWorkerView({
         </section>
       ) : (
         <ol className="space-y-2">
-          {(full?.criteriaItems || []).map((raw, i) => {
+          {(full?.criteriaItems || []).map((raw) => {
             const it = criterionFromSource(raw);
             const card = originalPracticeCard(indicator, raw);
             return (
@@ -111,7 +109,6 @@ export function IndicatorWorkerView({
                   title={card.title}
                   methods={it.methods}
                   changeKind={changeKindForCriterion(it)}
-                  delay={badgeDelay(indicator.id * 10 + i)}
                   focused={focusMark === it.mark}
                   scores={scoresForMark(scoring, it.mark)}
                   bands={card.bands}

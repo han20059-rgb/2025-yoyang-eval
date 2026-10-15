@@ -1,4 +1,3 @@
-import type { CSSProperties } from "react";
 import type { ChangeKind } from "@/lib/evalCriteria";
 
 const CHANGE_LABEL: Record<ChangeKind, string> = {
@@ -7,17 +6,9 @@ const CHANGE_LABEL: Record<ChangeKind, string> = {
   changed: "변경",
 };
 
-export function ChangeBadge({ kind, delay = 0 }: { kind: ChangeKind | null | undefined; delay?: number }) {
+export function ChangeBadge({ kind }: { kind: ChangeKind | null | undefined }) {
   if (!kind) return null;
-  const bob = kind === "new" || kind === "partial-new";
-  return (
-    <span
-      className={`eval-badge eval-badge-${kind}${bob ? " eval-badge-bob" : ""}`}
-      style={bob ? ({ "--badge-delay": `${delay}s` } as CSSProperties) : undefined}
-    >
-      {CHANGE_LABEL[kind]}
-    </span>
-  );
+  return <span className={`eval-badge eval-badge-${kind}`}>{CHANGE_LABEL[kind]}</span>;
 }
 
 export function MethodBadges({ methods }: { methods: { label: string; chip: string }[] }) {
@@ -36,16 +27,14 @@ export function MethodBadges({ methods }: { methods: { label: string; chip: stri
 export function EvalBadges({
   changeKind,
   methods = [],
-  delay = 0,
 }: {
   changeKind?: ChangeKind | null;
   methods?: { label: string; chip: string }[];
-  delay?: number;
 }) {
   if (!changeKind && !methods.length) return null;
   return (
     <span className="eval-badge-row">
-      <ChangeBadge kind={changeKind} delay={delay} />
+      <ChangeBadge kind={changeKind} />
       <MethodBadges methods={methods} />
     </span>
   );

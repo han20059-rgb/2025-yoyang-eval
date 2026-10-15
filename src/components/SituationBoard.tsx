@@ -8,7 +8,6 @@ import { useEvalSession } from "@/components/EvalSession";
 import { useProgress } from "@/components/ProgressProvider";
 import { useStaffDirectory } from "@/components/useStaffDirectory";
 import { EvalBadges } from "@/components/EvalBadges";
-import { badgeDelay } from "@/lib/evalBadges";
 import {
   assigneeGroups,
   assigneePreview,
@@ -55,7 +54,7 @@ function IndicatorSitCard({ card }: { card: SitIndicatorCard }) {
         <span className="shrink-0 text-[13px] font-semibold text-stone-700">원문 {card.score}점</span>
       </div>
       <div className="mt-1 min-w-0">
-        <EvalBadges changeKind={card.changeKind} methods={card.methods} delay={badgeDelay(card.id)} />
+        <EvalBadges changeKind={card.changeKind} methods={card.methods} />
       </div>
       <p className={`mt-1 text-[13px] font-semibold leading-5 ${st.text}`}>
         {st.label}

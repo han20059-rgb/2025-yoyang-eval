@@ -69,7 +69,6 @@ export function CriterionCard({
   title,
   methods,
   changeKind,
-  delay = 0,
   focused,
   scores,
   bands,
@@ -80,8 +79,6 @@ export function CriterionCard({
   title: string;
   methods: MethodDef[];
   changeKind?: ChangeKind | null;
-  delay?: number;
-  pulse?: boolean;
   focused?: boolean;
   scores: { score: string; condition: string; groupMarks: string; joint: boolean; notes?: string[] }[];
   bands?: PracticeBand[];
@@ -93,7 +90,7 @@ export function CriterionCard({
       <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
         <p className="text-[13px] font-bold text-stone-500">기준 {mark}</p>
         <h3 className="min-w-0 text-[18px] font-bold leading-7 text-stone-950">{title}</h3>
-        <EvalBadges changeKind={changeKind} methods={methods} delay={delay} />
+        <EvalBadges changeKind={changeKind} methods={methods} />
       </div>
       <ScoreConditions rows={scores} />
       {bands?.length ? <PracticeBands bands={bands} /> : null}

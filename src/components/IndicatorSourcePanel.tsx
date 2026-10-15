@@ -7,7 +7,6 @@ import { ScoringCriteria } from "@/components/ScoringCriteria";
 import { LawAccordion, OriginalProse, ZoomBox } from "@/components/OriginalProse";
 import { useEvalSession } from "@/components/EvalSession";
 import { MethodHeading } from "@/components/MethodText";
-import { badgeDelay } from "@/lib/evalBadges";
 import { criterionFromSource, uniqueMethods } from "@/lib/evalCriteria";
 import type { RoleId } from "@/data/duties";
 import type { Indicator } from "@/lib/types";
@@ -102,7 +101,7 @@ export function IndicatorSourcePanel({
               >
                 <div className="flex min-w-0 flex-wrap items-center gap-2">
                   <p className="text-[16px] font-semibold">{it.mark}</p>
-                  <MethodHeading methods={it.methods} isNew={it.isNew} isChanged={it.isChanged} delay={badgeDelay((indicator?.id || 0) * 10 + i)} />
+                  <MethodHeading methods={it.methods} isNew={it.isNew} isChanged={it.isChanged} />
                 </div>
                 {it.text ? <OriginalProse text={it.text} myRole={myRole} mineOnly={false} /> : null}
                 {raw.period ? (

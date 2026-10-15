@@ -7,7 +7,7 @@ import { ManualText, extractPurpose, splitScoring } from "@/components/Highlight
 import { CriteriaChecklist } from "@/components/CriteriaChecklist";
 import { EvalBadges } from "@/components/EvalBadges";
 import { MethodChips, MethodText } from "@/components/MethodText";
-import { badgeDelay, indicatorEvalMeta } from "@/lib/evalBadges";
+import { indicatorEvalMeta } from "@/lib/evalBadges";
 import { ProgressCounts } from "@/components/ProgressBoard";
 import { useProgress } from "@/components/ProgressProvider";
 import { parseEvalCriteria, uniqueMethods } from "@/lib/evalCriteria";
@@ -278,7 +278,7 @@ export function IndicatorView({
           ) : null}
         </div>
         <div className="mt-2 min-w-0">
-          <EvalBadges changeKind={headerMeta.changeKind} methods={headerMeta.methods} delay={badgeDelay(indicator.id)} />
+          <EvalBadges changeKind={headerMeta.changeKind} methods={headerMeta.methods} />
         </div>
       </header>
 

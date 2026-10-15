@@ -41,7 +41,7 @@ export function MethodText({
   );
 }
 
-export function MethodChips({ methods }: { methods: { label: string; chip: string }[]; pulse?: boolean }) {
+export function MethodChips({ methods }: { methods: { label: string; chip: string }[] }) {
   return <EvalBadges methods={methods} />;
 }
 
@@ -49,12 +49,10 @@ export function MethodHeading({
   methods,
   isNew,
   isChanged,
-  delay = 0,
 }: {
   methods: { label: string; chip: string }[];
   isNew?: boolean;
   isChanged?: boolean;
-  delay?: number;
 }) {
-  return <EvalBadges changeKind={isNew ? "new" : isChanged ? "changed" : null} methods={methods} delay={delay} />;
+  return <EvalBadges changeKind={isNew ? "new" : isChanged ? "changed" : null} methods={methods} />;
 }

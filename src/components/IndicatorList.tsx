@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { EvalBadges } from "@/components/EvalBadges";
 import { IndicatorProgressBadge } from "@/components/ProgressBoard";
-import { badgeDelay, indicatorEvalMeta } from "@/lib/evalBadges";
+import { indicatorEvalMeta } from "@/lib/evalBadges";
 import type { Indicator } from "@/lib/types";
 
 export function IndicatorList({ indicators }: { indicators: Indicator[] }) {
@@ -42,7 +42,7 @@ export function IndicatorList({ indicators }: { indicators: Indicator[] }) {
                       <IndicatorProgressBadge indicator={i} />
                     </span>
                     <span className="mt-1 block min-w-0">
-                      <EvalBadges changeKind={meta.changeKind} methods={meta.methods} delay={badgeDelay(i.id)} />
+                      <EvalBadges changeKind={meta.changeKind} methods={meta.methods} />
                     </span>
                     <span className="mt-0.5 block text-xs text-stone-500">
                       {i.sub} · {i.score}점

@@ -42,16 +42,6 @@ mark {
   border-radius: 0.2em;
 }
 
-@keyframes eval-badge-bob {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-2px);
-  }
-}
-
 .eval-badge-row {
   display: inline-flex;
   max-width: 100%;
@@ -86,23 +76,6 @@ mark {
   background: #ffedd5;
   color: #9a3412;
   border-color: #fed7aa;
-}
-
-.eval-badge-bob {
-  animation: eval-badge-bob 3.6s ease-in-out infinite;
-  animation-delay: var(--badge-delay, 0s);
-}
-
-.method-chip {
-  transition: transform 0.22s ease;
-}
-
-.method-chip:hover,
-.method-chip:focus-visible,
-a:hover .method-chip,
-a:focus-visible .method-chip {
-  transform: translateY(-2px);
-  outline: none;
 }
 
 .method-word {
@@ -147,18 +120,6 @@ a:focus-visible .method-chip {
   background: #fef9c3;
   color: #854d0e;
   border-color: #fde68a;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .eval-badge-bob {
-    animation: none;
-  }
-  .method-chip,
-  .method-chip:hover,
-  .method-chip:focus-visible {
-    transition: none;
-    transform: none;
-  }
 }
 
 table {

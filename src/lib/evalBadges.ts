@@ -32,7 +32,3 @@ export function criterionEvalMeta(item: EvalCriterion): { methods: MethodDef[]; 
     changeKind: changeKindForCriterion(item),
   };
 }
-
-export function badgeDelay(seed: number): number {
-  return (seed % 7) * 0.31;
-}
